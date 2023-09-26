@@ -48,7 +48,8 @@ tlv320aic3204_config(const uint8_t *data)
   }
 }
 
-static const uint8_t conf_data_pll[] = {
+static const uint8_t
+conf_data_pll[] = {
   // len, ( reg, data ),
   2, 0x00, 0x00, /* Initialize to Page 0 */
   2, 0x01, 0x01, /* Initialize the device through software reset */
@@ -180,7 +181,8 @@ static const uint8_t conf_data_divoff[] = {
   0 // sentinel
 };
 
-void tlv320aic3204_init(void)
+void
+tlv320aic3204_init(void)
 {
   tlv320aic3204_config(conf_data_pll);
   tlv320aic3204_config(conf_data_clk);
@@ -189,12 +191,14 @@ void tlv320aic3204_init(void)
   tlv320aic3204_config(conf_data_unmute);
 }
 
-void tlv320aic3204_stop(void)
+void
+tlv320aic3204_stop(void)
 {
   tlv320aic3204_config(conf_data_divoff);
 }
 
-void tlv320aic3204_set_fs(int fs)
+void
+tlv320aic3204_set_fs(int fs)
 {
   if (fs != 48 && fs != 96 && fs != 192)
     return;
@@ -210,85 +214,88 @@ void tlv320aic3204_set_fs(int fs)
   tlv320aic3204_config(conf_data_unmute);
 }
 
-void tlv320aic3204_set_impedance(int imp)
+void
+tlv320aic3204_set_impedance(int imp)
 {
-    imp &= 3; /* 1, 2, 3 */
-    tlv320aic3204_write(0x00, 0x01); /* Select Page 1 */
-    tlv320aic3204_write(0x34, (imp << 4)); /* Route IN2L to LEFT_P */
-    tlv320aic3204_write(0x36, (imp << 4)); /* Route IN2R to LEFT_N */
-    tlv320aic3204_write(0x37, (imp << 2)); /* Route IN3R to RIGHT_P */
-    tlv320aic3204_write(0x39, (imp << 2)); /* Route IN3L to RIGHT_N */
-    tlv320aic3204_write(0x00, 0x00); /* Select Page 0 */
+  imp &= 3;                              /* 1, 2, 3 */
+  tlv320aic3204_write(0x00, 0x01);       /* Select Page 1 */
+  tlv320aic3204_write(0x34, (imp << 4)); /* Route IN2L to LEFT_P */
+  tlv320aic3204_write(0x36, (imp << 4)); /* Route IN2R to LEFT_N */
+  tlv320aic3204_write(0x37, (imp << 2)); /* Route IN3R to RIGHT_P */
+  tlv320aic3204_write(0x39, (imp << 2)); /* Route IN3L to RIGHT_N */
+  tlv320aic3204_write(0x00, 0x00);       /* Select Page 0 */
 }
 
-
-void tlv320aic3204_set_gain(int g1, int g2)
+void
+tlv320aic3204_set_gain(int g1, int g2)
 {
-    if (g1 < 0) g1 = 0;
-    if (g2 < 0) g2 = 0;
-    if (g1 > 95) g1 = 95;
-    if (g2 > 95) g2 = 95;
+  if (g1 < 0) g1 = 0;
+  if (g2 < 0) g2 = 0;
+  if (g1 > 95) g1 = 95;
+  if (g2 > 95) g2 = 95;
 
-    tlv320aic3204_write(0x00, 0x01); /* Select Page 1 */
-    tlv320aic3204_write(0x3b, g1); /* Unmute Left MICPGA, set gain */
-    tlv320aic3204_write(0x3c, g2); /* Unmute Right MICPGA, set gain */
-    tlv320aic3204_write(0x00, 0x00); /* Select Page 0 */
+  tlv320aic3204_write(0x00, 0x01); /* Select Page 1 */
+  tlv320aic3204_write(0x3b, g1);   /* Unmute Left MICPGA, set gain */
+  tlv320aic3204_write(0x3c, g2);   /* Unmute Right MICPGA, set gain */
+  tlv320aic3204_write(0x00, 0x00); /* Select Page 0 */
 }
 
-void tlv320aic3204_set_digital_gain(int g1, int g2)
+void
+tlv320aic3204_set_digital_gain(int g1, int g2)
 {
-    if (g1 < -24) g1 = -24;
-    if (g1 > 40) g1 = 40;
-    if (g2 < -24) g2 = -24;
-    if (g2 > 40) g2 = 40;
+  if (g1 < -24) g1 = -24;
+  if (g1 > 40) g1 = 40;
+  if (g2 < -24) g2 = -24;
+  if (g2 > 40) g2 = 40;
 
-    tlv320aic3204_write(0x00, 0x00); /* Select Page 0 */
-    tlv320aic3204_write(0x53, g1 & 0x7f); /* Left ADC Channel Volume */
-    tlv320aic3204_write(0x54, g2 & 0x7f); /* Right ADC Channel Volume */
+  tlv320aic3204_write(0x00, 0x00);      /* Select Page 0 */
+  tlv320aic3204_write(0x53, g1 & 0x7f); /* Left ADC Channel Volume */
+  tlv320aic3204_write(0x54, g2 & 0x7f); /* Right ADC Channel Volume */
 }
 
-void tlv320aic3204_set_volume(int gain)
+void
+tlv320aic3204_set_volume(int gain)
 {
-    if (gain > 29)
-        gain = 29;
-    else if (gain < -6)
-        gain = 0x40;
-    else
-        gain &= 0x3f;
+  if (gain > 29)
+    gain = 29;
+  else if (gain < -6)
+    gain = 0x40;
+  else
+    gain &= 0x3f;
 
-    tlv320aic3204_write(0x00, 0x01); /* Select Page 1 */
-    tlv320aic3204_write(0x10, gain); /* Unmute Left MICPGA, set gain */
-    tlv320aic3204_write(0x11, gain); /* Unmute Right MICPGA, set gain */
-    tlv320aic3204_write(0x00, 0x00); /* Select Page 0 */
+  tlv320aic3204_write(0x00, 0x01); /* Select Page 1 */
+  tlv320aic3204_write(0x10, gain); /* Unmute Left MICPGA, set gain */
+  tlv320aic3204_write(0x11, gain); /* Unmute Right MICPGA, set gain */
+  tlv320aic3204_write(0x00, 0x00); /* Select Page 0 */
 }
 
-void tlv320aic3204_agc_config(tlv320aic3204_agc_config_t *conf)
+void
+tlv320aic3204_agc_config(tlv320aic3204_agc_config_t* conf)
 {
-    int ctrl = 0;
-    if (conf == NULL) {
-      ctrl = 0;
-    } else {
-      ctrl = 0x80
-        | ((conf->target_level & 0x7) << 4)
-        | (conf->gain_hysteresis & 0x3);
-    }
-    tlv320aic3204_write(0x00, 0x00); /* Select Page 0 */
-    tlv320aic3204_write(0x56, ctrl); /* Left AGC Control Register */
-    tlv320aic3204_write(0x5e, ctrl); /* Right AGC Control Register */
-    if (ctrl == 0)
-      return;
+  int ctrl = 0;
+  if (conf == NULL) {
+    ctrl = 0;
+  } else {
+    ctrl =
+      0x80 | ((conf->target_level & 0x7) << 4) | (conf->gain_hysteresis & 0x3);
+  }
+  tlv320aic3204_write(0x00, 0x00); /* Select Page 0 */
+  tlv320aic3204_write(0x56, ctrl); /* Left AGC Control Register */
+  tlv320aic3204_write(0x5e, ctrl); /* Right AGC Control Register */
+  if (ctrl == 0)
+    return;
 
-    ctrl = ((conf->attack & 0x1f) << 3) | (conf->attack_scale & 0x7);
-    tlv320aic3204_write(0x59, ctrl); /* Left AGC Attack Time */
-    tlv320aic3204_write(0x61, ctrl); /* Right AGC Attack Time */
+  ctrl = ((conf->attack & 0x1f) << 3) | (conf->attack_scale & 0x7);
+  tlv320aic3204_write(0x59, ctrl); /* Left AGC Attack Time */
+  tlv320aic3204_write(0x61, ctrl); /* Right AGC Attack Time */
 
-    ctrl = ((conf->decay & 0x1f) << 3) | (conf->decay_scale & 0x7);
-    tlv320aic3204_write(0x5a, ctrl); /* Left AGC Decay Time */
-    tlv320aic3204_write(0x62, ctrl); /* Right AGC Decay Time */
+  ctrl = ((conf->decay & 0x1f) << 3) | (conf->decay_scale & 0x7);
+  tlv320aic3204_write(0x5a, ctrl); /* Left AGC Decay Time */
+  tlv320aic3204_write(0x62, ctrl); /* Right AGC Decay Time */
 
-    ctrl = conf->maximum_gain;
-    tlv320aic3204_write(0x58, ctrl); /* Left AGC Maximum Gain */
-    tlv320aic3204_write(0x60, ctrl); /* Right AGC Maximum Gain */
+  ctrl = conf->maximum_gain;
+  tlv320aic3204_write(0x58, ctrl); /* Left AGC Maximum Gain */
+  tlv320aic3204_write(0x60, ctrl); /* Right AGC Maximum Gain */
 }
 
 // implement HPF of first order IIR
@@ -347,9 +354,10 @@ const uint8_t adc_iir_filter_default[] = {
   0 /* sentinel */
 };
 
-void tlv320aic3204_config_adc_filter(int enable)
+void
+tlv320aic3204_config_adc_filter(int enable)
 {
-  const uint8_t *p = adc_iir_filter_default;
+  const uint8_t* p = adc_iir_filter_default;
   if (enable)
     p = adc_iir_filter_dcreject2;
 
@@ -362,11 +370,14 @@ void tlv320aic3204_config_adc_filter(int enable)
       tlv320aic3204_write(reg++, *p++);
   }
   tlv320aic3204_write(0x00, 0x08); /* Select Page 8 */
-  tlv320aic3204_write(0x01, 0x05); /* ADC Coefficient Buffers will be switched at next frame boundary */
+  tlv320aic3204_write(
+    0x01,
+    0x05); /* ADC Coefficient Buffers will be switched at next frame boundary */
   tlv320aic3204_write(0x00, 0x00); /* Back to page 0 */
 }
 
-void tlv320aic3204_config_adc_filter2(double adj)
+void
+tlv320aic3204_config_adc_filter2(double adj)
 {
   int reg;
   int32_t b0 = 0x7ffada00;
@@ -410,32 +421,38 @@ void tlv320aic3204_config_adc_filter2(double adj)
   tlv320aic3204_write(0x00, 0x00); /* Back to page 0 */
 }
 
-int tlv320aic3204_get_sticky_flag_register(void)
+int
+tlv320aic3204_get_sticky_flag_register(void)
 {
   return tlv320aic3204_read(0x2a); /* Sticky Flag Register */
 }
 
-int8_t tlv320aic3204_get_left_agc_gain(void)
+int8_t
+tlv320aic3204_get_left_agc_gain(void)
 {
   return tlv320aic3204_read(0x5d); /* Left Channel AGC Gain Flag */
 }
 
-int8_t tlv320aic3204_get_right_agc_gain(void)
+int8_t
+tlv320aic3204_get_right_agc_gain(void)
 {
   return tlv320aic3204_read(0x65); /* Right Channel AGC Gain Flag */
 }
 
-void tlv320aic3204_set_adc_phase_adjust(int8_t adjust)
+void
+tlv320aic3204_set_adc_phase_adjust(int8_t adjust)
 {
   tlv320aic3204_write(0x55, adjust);
 }
 
-void tlv320aic3204_set_adc_fine_gain_adjust(int8_t g1, int8_t g2)
+void
+tlv320aic3204_set_adc_fine_gain_adjust(int8_t g1, int8_t g2)
 {
   tlv320aic3204_write(0x52, (g1 & 0x7) << 4 | (g2 & 0x7));
 }
 
-void tlv320aic3204_beep(void)
+void
+tlv320aic3204_beep(void)
 {
   /*
   tlv320aic3204_write(0x25, 00); // power off dac

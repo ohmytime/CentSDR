@@ -22,7 +22,8 @@ si5351_bulk_write(const uint8_t *buf, int len)
   i2cReleaseBus(&I2CD1);
 }
 
-void si5351_disable_output(void)
+void
+si5351_disable_output(void)
 {
   uint8_t reg[4];
   si5351_write(SI5351_REG_3_OUTPUT_ENABLE_CONTROL, 0xff);
@@ -33,14 +34,17 @@ void si5351_disable_output(void)
   si5351_bulk_write(reg, 4);
 }
 
-void si5351_enable_output(void)
+void
+si5351_enable_output(void)
 {
   si5351_write(SI5351_REG_3_OUTPUT_ENABLE_CONTROL, 0x00);
 }
 
-void si5351_reset_pll(void)
+void
+si5351_reset_pll(void)
 {
-  //si5351_write(SI5351_REG_177_PLL_RESET, SI5351_PLL_RESET_A | SI5351_PLL_RESET_B);
+  // si5351_write(SI5351_REG_177_PLL_RESET, SI5351_PLL_RESET_A |
+  // SI5351_PLL_RESET_B);
   si5351_write(SI5351_REG_177_PLL_RESET, 0xAC);
 }
 
@@ -79,9 +83,9 @@ void si5351_setupPLL(uint8_t pll, /* SI5351_PLL_A or SI5351_PLL_B */
   else
   {
     /* Fractional mode */
-    //P1 = (uint32_t)(128 * mult + floor(128 * ((float)num/(float)denom)) - 512);
+    // P1 = (uint32_t)(128 * mult + floor(128 * ((float)num/(float)denom)) - 512);
     P1 = 128 * mult + ((128 * num) / denom) - 512;
-    //P2 = (uint32_t)(128 * num - denom * floor(128 * ((float)num/(float)denom)));
+    // P2 = (uint32_t)(128 * num - denom * floor(128 * ((float)num/(float)denom)));
     P2 = 128 * num - denom * ((128 * num) / denom);
     P3 = denom;
   }
@@ -192,40 +196,48 @@ gcd(uint32_t x, uint32_t y)
 #define PLLFREQ (XTALFREQ * PLL_N)
 
 void
-si5351_set_frequency_fixedpll(int channel, int pll, int pllfreq, int freq,
-                              uint32_t rdiv, uint8_t drive_strength)
+si5351_set_frequency_fixedpll(int channel,
+                              int pll,
+                              int pllfreq,
+                              int freq,
+                              uint32_t rdiv,
+                              uint8_t drive_strength)
 {
-    int32_t div = pllfreq / freq; // range: 8 ~ 1800
-    int32_t num = pllfreq - freq * div;
-    int32_t denom = freq;
-    //int32_t k = freq / (1<<20) + 1;
-    int32_t k = gcd(num, denom);
-    num /= k;
-    denom /= k;
-    while (denom >= (1<<20)) {
-      num >>= 1;
-      denom >>= 1;
-    }
-    si5351_setupMultisynth(channel, pll, div, num, denom, rdiv, drive_strength);
+  int32_t div = pllfreq / freq; // range: 8 ~ 1800
+  int32_t num = pllfreq - freq * div;
+  int32_t denom = freq;
+  // int32_t k = freq / (1<<20) + 1;
+  int32_t k = gcd(num, denom);
+  num /= k;
+  denom /= k;
+  while (denom >= (1 << 20)) {
+    num >>= 1;
+    denom >>= 1;
+  }
+  si5351_setupMultisynth(channel, pll, div, num, denom, rdiv, drive_strength);
 }
 
 void
-si5351_set_frequency_fixeddiv(int channel, int pll, int freq, int div,
-                              uint8_t     drive_strength)
+si5351_set_frequency_fixeddiv(int channel,
+                              int pll,
+                              int freq,
+                              int div,
+                              uint8_t drive_strength)
 {
-    int32_t pllfreq = freq * div;
-    int32_t multi = pllfreq / XTALFREQ;
-    int32_t num = pllfreq - multi * XTALFREQ;
-    int32_t denom = XTALFREQ;
-    int32_t k = gcd(num, denom);
-    num /= k;
-    denom /= k;
-    while (denom >= (1<<20)) {
-      num >>= 1;
-      denom >>= 1;
-    }
-    si5351_setupPLL(pll, multi, num, denom);
-    si5351_setupMultisynth(channel, pll, div, 0, 1, SI5351_R_DIV_1, drive_strength);
+  int32_t pllfreq = freq * div;
+  int32_t multi = pllfreq / XTALFREQ;
+  int32_t num = pllfreq - multi * XTALFREQ;
+  int32_t denom = XTALFREQ;
+  int32_t k = gcd(num, denom);
+  num /= k;
+  denom /= k;
+  while (denom >= (1 << 20)) {
+    num >>= 1;
+    denom >>= 1;
+  }
+  si5351_setupPLL(pll, multi, num, denom);
+  si5351_setupMultisynth(
+    channel, pll, div, 0, 1, SI5351_R_DIV_1, drive_strength);
 }
 
 //#define drive_strength SI5351_CLK_DRIVE_STRENGTH_2MA
@@ -252,7 +264,7 @@ si5351_set_frequency(int freq)
 
 #if 0
   if (current_band != band)
-    si5351_disable_output();
+  si5351_disable_output();
 #endif
 
   switch (band) {
@@ -285,7 +297,7 @@ si5351_set_frequency(int freq)
 
   if (current_band != band) {
     si5351_reset_pll();
-    //si5351_enable_output();
+    // si5351_enable_output();
   }
 
   current_band = band;

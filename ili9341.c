@@ -23,10 +23,10 @@
 
 #define RESET_ASSERT	palClearPad(GPIOA, 15)
 #define RESET_NEGATE	palSetPad(GPIOA, 15)
-#define CS_LOW			palClearPad(GPIOB, 6)
-#define CS_HIGH			palSetPad(GPIOB, 6)
-#define DC_CMD			palClearPad(GPIOB, 7)
-#define DC_DATA			palSetPad(GPIOB, 7)
+#define CS_LOW			  palClearPad(GPIOB, 6)
+#define CS_HIGH			  palSetPad(GPIOB, 6)
+#define DC_CMD			  palClearPad(GPIOB, 7)
+#define DC_DATA			  palSetPad(GPIOB, 7)
 
 uint16_t spi_buffer[4096];
 
@@ -57,7 +57,7 @@ ssp_senddata16(uint16_t x)
 {
   ssp_wait_slot();
   SPI1->DR = x;
-  //while (SPI1->SR & SPI_SR_BSY)
+  // while (SPI1->SR & SPI_SR_BSY)
   //  ;
 }
 
@@ -65,21 +65,22 @@ void
 ssp_databit8(void)
 {
   SPI1->CR2 = (SPI1->CR2 & 0xf0ff) | 0x0700;
-//LPC_SSP1->CR0 = (LPC_SSP1->CR0 & 0xf0) | SSP_DATABIT_8;
+// LPC_SSP1->CR0 = (LPC_SSP1->CR0 & 0xf0) | SSP_DATABIT_8;
 }
 
 void
 ssp_databit16(void)
 {
   SPI1->CR2 = (SPI1->CR2 & 0xf0ff) | 0x0f00;
-  //LPC_SSP1->CR0 = (LPC_SSP1->CR0 & 0xf0) | SSP_DATABIT_16;
+  // LPC_SSP1->CR0 = (LPC_SSP1->CR0 & 0xf0) | SSP_DATABIT_16;
 }
-
 
 const stm32_dma_stream_t  *dmatx;
 uint32_t txdmamode;
 
-static void spi_lld_serve_tx_interrupt(SPIDriver *spip, uint32_t flags) {
+static void
+spi_lld_serve_tx_interrupt(SPIDriver *spip, uint32_t flags)
+{
   (void)spip;
   (void)flags;
 }
@@ -114,73 +115,74 @@ send_command(uint8_t cmd, int len, const uint8_t *data)
 {
 	CS_LOW;
 	DC_CMD;
-    ssp_databit8();
+  ssp_databit8();
 	ssp_senddata(cmd);
 	DC_DATA;
 	while (len-- > 0) {
-      ssp_senddata(*data++);
+    ssp_senddata(*data++);
 	}
-	//CS_HIGH;
+	// CS_HIGH;
 }
 
-const uint8_t ili9341_init_seq[] = {
-		// cmd, len, data...,
-		// Power control B
-		0xCF, 3, 0x00, 0x83, 0x30,
-		// Power on sequence control
-		0xED, 4, 0x64, 0x03, 0x12, 0x81,
-		//0xED, 4, 0x55, 0x01, 0x23, 0x01,
-		// Driver timing control A
-		0xE8, 3, 0x85, 0x01, 0x79,
-		//0xE8, 3, 0x84, 0x11, 0x7a,
-		// Power control A
-		0xCB, 5, 0x39, 0x2C, 0x00, 0x34, 0x02,
-		// Pump ratio control
-		0xF7, 1, 0x20,
-		// Driver timing control B
-		0xEA, 2, 0x00, 0x00,
-		// POWER_CONTROL_1
-		0xC0, 1, 0x26,
-		// POWER_CONTROL_2
-		0xC1, 1, 0x11,
-		// VCOM_CONTROL_1
-		0xC5, 2, 0x35, 0x3E,
-		// VCOM_CONTROL_2
-		0xC7, 1, 0xBE,
-		// MEMORY_ACCESS_CONTROL
-		//0x36, 1, 0x48, // portlait
-		0x36, 1, 0x28, // landscape
-		// COLMOD_PIXEL_FORMAT_SET : 16 bit pixel
-		0x3A, 1, 0x55,
-		// Frame Rate
-		0xB1, 2, 0x00, 0x1B,
-		// Gamma Function Disable
-		0xF2, 1, 0x08,
-		// gamma set for curve 01/2/04/08
-		0x26, 1, 0x01,
-		// positive gamma correction
-		0xE0, 15, 0x1F,  0x1A,  0x18,  0x0A,  0x0F,  0x06,  0x45,  0x87,  0x32,  0x0A,  0x07,  0x02,  0x07, 0x05,  0x00,
-		// negativ gamma correction
-		0xE1, 15, 0x00,  0x25,  0x27,  0x05,  0x10,  0x09,  0x3A,  0x78,  0x4D,  0x05,  0x18,  0x0D,  0x38, 0x3A,  0x1F,
+const uint8_t
+ili9341_init_seq[] =
+{
+	// cmd, len, data...,
+	// Power control B
+	0xCF, 3, 0x00, 0x83, 0x30,
+	// Power on sequence control
+	0xED, 4, 0x64, 0x03, 0x12, 0x81,
+	// 0xED, 4, 0x55, 0x01, 0x23, 0x01,
+	// Driver timing control A
+	0xE8, 3, 0x85, 0x01, 0x79,
+	// 0xE8, 3, 0x84, 0x11, 0x7a,
+	// Power control A
+	0xCB, 5, 0x39, 0x2C, 0x00, 0x34, 0x02,
+	// Pump ratio control
+	0xF7, 1, 0x20,
+	// Driver timing control B
+	0xEA, 2, 0x00, 0x00,
+	// POWER_CONTROL_1
+	0xC0, 1, 0x26,
+	// POWER_CONTROL_2
+	0xC1, 1, 0x11,
+	// VCOM_CONTROL_1
+	0xC5, 2, 0x35, 0x3E,
+	// VCOM_CONTROL_2
+	0xC7, 1, 0xBE,
+	// MEMORY_ACCESS_CONTROL
+	// 0x36, 1, 0x48, // portlait
+	0x36, 1, 0x28, // landscape
+	// COLMOD_PIXEL_FORMAT_SET : 16 bit pixel
+	0x3A, 1, 0x55,
+	// Frame Rate
+	0xB1, 2, 0x00, 0x1B,
+	// Gamma Function Disable
+	0xF2, 1, 0x08,
+	// gamma set for curve 01/2/04/08
+	0x26, 1, 0x01,
+	// positive gamma correction
+	0xE0, 15, 0x1F,  0x1A,  0x18,  0x0A,  0x0F,  0x06,  0x45,  0x87,  0x32,  0x0A,  0x07,  0x02,  0x07, 0x05,  0x00,
+	// negativ gamma correction
+	0xE1, 15, 0x00,  0x25,  0x27,  0x05,  0x10,  0x09,  0x3A,  0x78,  0x4D,  0x05,  0x18,  0x0D,  0x38, 0x3A,  0x1F,
 
-		// Column Address Set
-	    0x2A, 4, 0x00, 0x00, 0x01, 0x3f, // width 320
-	    // Page Address Set
-	    0x2B, 4, 0x00, 0x00, 0x00, 0xef, // height 240
+	// Column Address Set
+	0x2A, 4, 0x00, 0x00, 0x01, 0x3f, // width 320
+	// Page Address Set
+	0x2B, 4, 0x00, 0x00, 0x00, 0xef, // height 240
 
-		// entry mode
-		0xB7, 1, 0x06,
-		// display function control
-		0xB6, 4, 0x0A, 0x82, 0x27, 0x00,
+	// entry mode
+	0xB7, 1, 0x06,
+	// display function control
+	0xB6, 4, 0x0A, 0x82, 0x27, 0x00,
 
-		// control display
-		//0x53, 1, 0x0c,
-		// diaplay brightness
-		//0x51, 1, 0xff,
-
-		// sleep out
-		0x11, 0,
-		0 // sentinel
+	// control display
+	// 0x53, 1, 0x0c,
+	// diaplay brightness
+	// 0x51, 1, 0xff,
+	// sleep out
+	0x11, 0,
+	0 // sentinel
 };
 
 void
@@ -209,46 +211,45 @@ ili9341_init(void)
 #endif
 }
 
-void ili9341_pixel(int x, int y, int color)
+void
+ili9341_pixel(int x, int y, int color)
 {
-	uint8_t xx[4] = { x >> 8, x, (x+1) >> 8, (x+1) };
-	uint8_t yy[4] = { y >> 8, y, (y+1) >> 8, (y+1) };
-	uint8_t cc[2] = { color >> 8, color };
-	send_command(0x2A, 4, xx);
-    send_command(0x2B, 4, yy);
-    send_command(0x2C, 2, cc);
-    //send_command16(0x2C, color);
+  uint8_t xx[4] = { x >> 8, x, (x + 1) >> 8, (x + 1) };
+  uint8_t yy[4] = { y >> 8, y, (y + 1) >> 8, (y + 1) };
+  uint8_t cc[2] = { color >> 8, color };
+  send_command(0x2A, 4, xx);
+  send_command(0x2B, 4, yy);
+  send_command(0x2C, 2, cc);
+  // send_command16(0x2C, color);
 }
 
-
-
-void ili9341_fill(int x, int y, int w, int h, int color)
+void
+ili9341_fill(int x, int y, int w, int h, int color)
 {
-	uint8_t xx[4] = { x >> 8, x, (x+w-1) >> 8, (x+w-1) };
-	uint8_t yy[4] = { y >> 8, y, (y+h-1) >> 8, (y+h-1) };
-    int len = w * h;
-	send_command(0x2A, 4, xx);
-    send_command(0x2B, 4, yy);
-    send_command(0x2C, 0, NULL);
-    while (len-- > 0) 
-      ssp_senddata16(color);
+  uint8_t xx[4] = { x >> 8, x, (x + w - 1) >> 8, (x + w - 1) };
+  uint8_t yy[4] = { y >> 8, y, (y + h - 1) >> 8, (y + h - 1) };
+  int len = w * h;
+  send_command(0x2A, 4, xx);
+  send_command(0x2B, 4, yy);
+  send_command(0x2C, 0, NULL);
+  while (len-- > 0)
+  ssp_senddata16(color);
 }
 
-void ili9341_draw_bitmap(int x, int y, int w, int h, uint16_t *buf)
+void
+ili9341_draw_bitmap(int x, int y, int w, int h, uint16_t* buf)
 {
-	uint8_t xx[4] = { x >> 8, x, (x+w-1) >> 8, (x+w-1) };
-	uint8_t yy[4] = { y >> 8, y, (y+h-1) >> 8, (y+h-1) };
-    int len = w * h;
-
-	send_command(0x2A, 4, xx);
-	send_command(0x2B, 4, yy);
-	send_command(0x2C, 0, NULL);
-
-    dmaStreamSetMemory0(dmatx, buf);
-    dmaStreamSetTransactionSize(dmatx, len);
-    dmaStreamSetMode(dmatx, txdmamode | STM32_DMA_CR_MINC);
-    dmaStreamEnable(dmatx);
-    dmaWaitCompletion(dmatx);
+  uint8_t xx[4] = { x >> 8, x, (x + w - 1) >> 8, (x + w - 1) };
+  uint8_t yy[4] = { y >> 8, y, (y + h - 1) >> 8, (y + h - 1) };
+  int len = w * h;
+  send_command(0x2A, 4, xx);
+  send_command(0x2B, 4, yy);
+  send_command(0x2C, 0, NULL);
+  dmaStreamSetMemory0(dmatx, buf);
+  dmaStreamSetTransactionSize(dmatx, len);
+  dmaStreamSetMode(dmatx, txdmamode | STM32_DMA_CR_MINC);
+  dmaStreamEnable(dmatx);
+  dmaWaitCompletion(dmatx);
 }
 
 void

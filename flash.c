@@ -25,7 +25,7 @@
 static int flash_wait_for_last_operation(void)
 {
   while (FLASH->SR == FLASH_SR_BSY) {
-    //WWDG->CR = WWDG_CR_T;
+    // WWDG->CR = WWDG_CR_T;
   }
   return FLASH->SR;
 }
@@ -52,7 +52,7 @@ void flash_program_half_word(uint32_t address, uint16_t data)
 {
 	flash_wait_for_last_operation();
 	FLASH->CR |= FLASH_CR_PG;
-    *(__IO uint16_t*)address = data;
+  *(__IO uint16_t*)address = data;
 	flash_wait_for_last_operation();
 	FLASH->CR &= ~FLASH_CR_PG;
 }

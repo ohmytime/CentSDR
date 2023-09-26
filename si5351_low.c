@@ -6,22 +6,22 @@
 static void
 rcc_gpio_init(void)
 {
-    // Reset AHB,APB1,APB2
-    RCC->AHBRSTR |= 0xffffffff;
-    RCC->AHBRSTR = 0;
-    RCC->APB1RSTR |= 0xffffffff;
-    RCC->APB1RSTR = 0;
-    RCC->APB2RSTR |= 0xffffffff;
-    RCC->APB2RSTR = 0;
+  // Reset AHB,APB1,APB2
+  RCC->AHBRSTR |= 0xffffffff;
+  RCC->AHBRSTR = 0;
+  RCC->APB1RSTR |= 0xffffffff;
+  RCC->APB1RSTR = 0;
+  RCC->APB2RSTR |= 0xffffffff;
+  RCC->APB2RSTR = 0;
 
-    RCC->APB1ENR |= RCC_APB1ENR_PWREN | RCC_APB1ENR_I2C1EN;
-    RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
-    RCC->CFGR3 |= RCC_CFGR3_I2C1SW_HSI;
+  RCC->APB1ENR |= RCC_APB1ENR_PWREN | RCC_APB1ENR_I2C1EN;
+  RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
+  RCC->CFGR3 |= RCC_CFGR3_I2C1SW_HSI;
 
-    GPIOB->AFRH = 0x55550044;  // PB8,PB9 Alternate Function 4
-    GPIOB->OTYPER |= 0x0300;   // PB8,PB9 Open drain
-    GPIOB->MODER |= 0x000A0000;//
-    GPIOB->OSPEEDR |= 0x00050000;//
+  GPIOB->AFRH = 0x55550044;  // PB8,PB9 Alternate Function 4
+  GPIOB->OTYPER |= 0x0300;   // PB8,PB9 Open drain
+  GPIOB->MODER |= 0x000A0000;//
+  GPIOB->OSPEEDR |= 0x00050000;//
 }
 
 static void

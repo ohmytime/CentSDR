@@ -754,44 +754,44 @@ static void cmd_show(BaseSequentialStream *chp, int argc, char *argv[])
 
 static void cmd_channel(BaseSequentialStream *chp, int argc, char *argv[])
 {
-    if (argc == 0) {
-      chprintf(chp, "usage: channel [save|list] [n(0-99)]\r\n");
-      return;
-    }
+  if (argc == 0) {
+    chprintf(chp, "usage: channel [save|list] [n(0-99)]\r\n");
+    return;
+  }
 
-    int channel;
-    if (strncmp(argv[0], "save", 1) == 0) {
-      channel = uistat.channel;
-      if (argc >= 2) {
-        channel = atoi(argv[1]);
-        if (channel < 0 || channel >= CHANNEL_MAX) {
-          chprintf(chp, "specified channel is out of range\r\n");
-          return;
-        }
-      } else {
-        chprintf(chp, "channel saved on %d\r\n", channel);
-      }
-      config.channels[channel].freq = uistat.freq;
-      config.channels[channel].modulation = uistat.modulation;
-    } else if (strncmp(argv[0], "list", 1) == 0) {
-      for (channel = 0; channel < CHANNEL_MAX; channel++) {
-        if (config.channels[channel].freq) {
-          chprintf(chp, "%d %d %s\r\n", channel,
-                   config.channels[channel].freq,
-                   mod_table[config.channels[channel].modulation].name);
-        }
-      }
-    } else {
-      channel = atoi(argv[0]);
+  int channel;
+  if (strncmp(argv[0], "save", 1) == 0) {
+    channel = uistat.channel;
+    if (argc >= 2) {
+      channel = atoi(argv[1]);
       if (channel < 0 || channel >= CHANNEL_MAX) {
         chprintf(chp, "specified channel is out of range\r\n");
         return;
       }
-      recall_channel(channel);
-      uistat.mode = CHANNEL;
-      uistat.channel = channel;
-      disp_update();
+    } else {
+      chprintf(chp, "channel saved on %d\r\n", channel);
     }
+    config.channels[channel].freq = uistat.freq;
+    config.channels[channel].modulation = uistat.modulation;
+  } else if (strncmp(argv[0], "list", 1) == 0) {
+    for (channel = 0; channel < CHANNEL_MAX; channel++) {
+      if (config.channels[channel].freq) {
+        chprintf(chp, "%d %d %s\r\n", channel,
+                config.channels[channel].freq,
+                mod_table[config.channels[channel].modulation].name);
+      }
+    }
+  } else {
+    channel = atoi(argv[0]);
+    if (channel < 0 || channel >= CHANNEL_MAX) {
+      chprintf(chp, "specified channel is out of range\r\n");
+      return;
+    }
+    recall_channel(channel);
+    uistat.mode = CHANNEL;
+    uistat.channel = channel;
+    disp_update();
+  }
 }
 
 static void cmd_revision(BaseSequentialStream *chp, int argc, char *argv[])

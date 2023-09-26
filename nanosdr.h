@@ -151,14 +151,14 @@ typedef struct {
 	uint32_t phase_accum;
 
     // average of correlation vector angle
-    int32_t sdi; 
+    int32_t sdi;
 	int32_t sdq;
 
     int32_t corr;
 	int32_t corr_ave;
 	int32_t corr_std;
     int16_t integrator;
-  
+
 } stereo_separate_state_t;
 
 extern stereo_separate_state_t stereo_separate_state;
