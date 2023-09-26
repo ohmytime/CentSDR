@@ -402,7 +402,7 @@ cw_demod(int16_t *src, int16_t *dst, size_t len)
   weaver_demod_conf_t dc = {
     mode_freqoffset_phasestep, cw_tone_phasestep, &bq_cw_i, &bq_cw_q
   };
-  
+
   demod_weaver(src, dst, len, &dc);
 }
 
@@ -442,8 +442,8 @@ am_demod(int16_t *src, int16_t *dst, size_t len)
 	arm_biquad_cascade_df1_q15(&bq_am_i, buffer[0], buffer2[0], len/2);
 	arm_biquad_cascade_df1_q15(&bq_am_q, buffer[1], buffer2[1], len/2);
 
-    disp_fetch_samples(B_IF2, BT_IQ, buffer2[0], buffer2[1], len/2);
-    
+  disp_fetch_samples(B_IF2, BT_IQ, buffer2[0], buffer2[1], len/2);
+
     //int32_t acc_z = 0;
 	bufi = buffer2[0];
 	bufq = buffer2[1];
@@ -575,7 +575,7 @@ fm_demod(int16_t *src, int16_t *dst, size_t len)
     q15_t v;
 
     disp_fetch_samples(B_CAPTURE, BT_C_INTERLEAVE, src, NULL, len);
-    
+
 	for (i = 0; i < len; i += 2) {
         uint32_t x1 = *s++;
         v = atan_2iq(x0, x1);
@@ -633,7 +633,7 @@ stereo_separate(int16_t *src, int16_t *dest, int32_t length)
 		int32_t x = src[i];
 		dest[i] = (ss * x) >> (16 - 1);
         //src[i] = src[i] / 2;
-        
+
         // correlate 19kHz pilot carrier
 		di += (c * x) >> 16;
 		dq += (s * x) >> 16;
@@ -660,7 +660,7 @@ stereo_separate(int16_t *src, int16_t *dest, int32_t length)
 			corr = -4095;
         //phase_step = stereo_separate_state.phase_step_default;
 	}
-    
+
 	if (corr != 0) {
         // for monitoring
 		stereo_separate_state.corr = corr;
@@ -759,7 +759,7 @@ fm_adj_filter(int16_t *src, size_t len)
     uint32_t zero = 0;
     uint32_t k12 = 0x5ae1eccd;
     //uint32_t k12 = 0x51ecea3d;
-    
+
 	for (i = 0; i < len; i += 2) {
         int32_t x0 = *s;
         int32_t acc_i = 0;
@@ -780,7 +780,7 @@ fm_adj_filter(int16_t *src, size_t len)
 #else
         *s++ = __PKHTB(acc_q, acc_i, 16);
 #endif
-        
+
         x2 = x1;
         x1 = x0;
     }
@@ -808,7 +808,7 @@ fm_demod_stereo(int16_t *src, int16_t *dst, size_t len)
 {
   // apply frequency response adjustment
   fm_adj_filter(src, len);
-   
+
   disp_fetch_samples(B_CAPTURE, BT_C_INTERLEAVE, src, NULL, len);
   fm_demod0(src, buffer[0], len);
   disp_fetch_samples(B_IF1, BT_REAL, buffer[0], NULL, len/2);

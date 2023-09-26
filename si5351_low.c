@@ -31,8 +31,8 @@ i2c_init(I2C_TypeDef* i2c)
 	i2c->CR1 &= ~I2C_CR1_PE;
 	while (i2c->CR1 & I2C_CR1_PE);
 
-    // 100kHz @ 8MHz
-    i2c->TIMINGR = 0x10420F13;
+  // 100kHz @ 8MHz
+  i2c->TIMINGR = 0x10420F13;
 
 	// Use 7-bit addresses
 	i2c->CR2 &=~ I2C_CR2_ADD10;

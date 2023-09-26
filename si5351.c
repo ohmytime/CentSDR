@@ -100,7 +100,7 @@ void si5351_setupPLL(uint8_t pll, /* SI5351_PLL_A or SI5351_PLL_B */
   si5351_bulk_write(reg, 9);
 }
 
-void 
+void
 si5351_setupMultisynth(uint8_t     output,
                        uint8_t	   pllSource,
                        uint32_t    div, // 4,6,8, 8+ ~ 900
@@ -254,7 +254,7 @@ si5351_set_frequency(int freq)
   if (current_band != band)
     si5351_disable_output();
 #endif
-  
+
   switch (band) {
   case 0:
     if (rdiv == SI5351_R_DIV_8) {

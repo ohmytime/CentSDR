@@ -525,7 +525,7 @@ set_window_function(int wf_type)
   else if (wf_type == 2)
     winfunc_table = winfunc_chebychef;
 }
-            
+
 arm_cfft_radix4_instance_q31 cfft_inst;
 
 //#define mag(r,i) (q31_t)(((q63_t)r*r)>>33)+(q31_t)(((q63_t)i*i)>>33)
@@ -944,7 +944,7 @@ draw_waveform(void)
         if (qmax < (q0+q1)/2) qmax = (q0+q1)/2;
         if (qmin > (q1+q2)/2) qmin = (q1+q2)/2;
         if (qmax < (q1+q2)/2) qmax = (q1+q2)/2;
-        
+
         for (y = 0; y < HEIGHT; y++) {
           c = bg;
           // draw origin line
@@ -958,7 +958,7 @@ draw_waveform(void)
             c |= RGB565(255, 255, 0);
           if (y == q1 || (qmin < y && y <= qmax))
             c |= RGB565(255, 0, 255);
-          
+
           spi_buffer[y * w + i] = c;
         }
         i0 = i1;
@@ -967,7 +967,7 @@ draw_waveform(void)
         q1 = q2;
         x++;
       }
-      
+
       ili9341_draw_bitmap(xx, 152, w, HEIGHT, spi_buffer);
       xx += i;
 	}
@@ -992,7 +992,7 @@ draw_waterfall(void)
 
     if (uistat.wfdispmode != WATERFALL)
       return;
-    
+
 	for (x = 0; x < 320; x++) {
         int64_t acc = 0;
         int i0 = i;
@@ -1038,14 +1038,14 @@ itoap(int value, char *buf, int dig, int pad)
     neg = '-';
     value = -value;
   }
-  
+
   buf[dig--] = '\0';
   do {
     buf[dig--] = (value % 10) + '0';
     value /= 10;
   } while (value > 0 && dig >= 0);
   if (neg && dig >= 0) {
-    buf[dig--] = neg;    
+    buf[dig--] = neg;
   }
   while (dig >= 0) {
     buf[dig--] = pad;
@@ -1067,7 +1067,7 @@ draw_tick_abs(void)
     float step = unit * 1024.0 / (fs * param->stride);
     float freq = center_frequency;
     float x;
-    
+
     ili9341_fill(0, 136, 320, 16, bg);
 
     freq -= unit * 1000 * offset / step;
@@ -1292,7 +1292,7 @@ draw_info(void)
       fg = 0x07ff;
       if (uistat.rfgain < 0 || uistat.rfgain >= 96)
         fg = 0x070f;
-      ili9341_drawfont(15, &NF20x24, x, y, fg, bg); 
+      ili9341_drawfont(15, &NF20x24, x, y, fg, bg);
     }
 }
 
@@ -1308,7 +1308,7 @@ draw_aux_info(void)
     if (uistat.mode == AGC_MAXGAIN) {
       fg = BG_NORMAL; bg = FG_NORMAL;
     }
-      
+
     ili9341_drawstring_5x7("AGCMAX", x, y, fg, bg);
     x += 30;
     itoap(config.agc.maximum_gain, str, 6, ' ');
@@ -1320,7 +1320,7 @@ draw_aux_info(void)
     if (uistat.mode == CWTONE) {
       fg = BG_NORMAL; bg = FG_NORMAL;
     }
-      
+
     ili9341_drawstring_5x7("CWTONE", x, y, fg, bg);
     x += 30;
     itoap(uistat.cw_tone_freq, str, 4, ' ');
@@ -1423,7 +1423,7 @@ disp_process(void)
     clear_aux_info();
     spdispinfo.update_flag &= ~FLAG_AUX_INFO;
   }
-  
+
   if (spdispinfo.update_flag & FLAG_UI) {
     draw_tick();
     if (uistat.mode == CHANNEL)
@@ -1452,7 +1452,7 @@ disp_update(void)
 {
   spdispinfo.update_flag |= FLAG_UI;
 }
-   
+
 void
 disp_update_power(void)
 {

@@ -10,7 +10,7 @@ CentSDR - Tiny Standalone Software Defined Receiver
 CentSDR is tiny handheld standalone software defined receiver with LCD display,
 that is simple, low budget, but has reasonable perfomance.
 This project is aimed at contributing to studies, experiments and educations around
-RF technology. 
+RF technology.
 
 # Block Diagram
 
@@ -23,9 +23,9 @@ RF technology.
 ## Prepare ARM Cross Tools
 
 Install cross tools and firmware updating tool.
- 
+
     $ brew cask install gcc-arm-embedded
-	
+
 ## Fetch Source
 
 Clone source code from github.
@@ -55,9 +55,9 @@ Connect ST-Link2 to target board, then launch openocd as follows.
 
 Flash firmware using gdb.
 
-    $ arm-none-eabi-gdb 
+    $ arm-none-eabi-gdb
     > target extended-remote :4242
-    > exec build/ch.elf 
+    > exec build/ch.elf
     > load
     > quit
 

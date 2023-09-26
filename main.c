@@ -29,7 +29,7 @@ static __attribute__((noreturn)) THD_FUNCTION(Thread1, arg)
       systime_t time = 100;
       chThdSleepMilliseconds(time);
 
-      calc_stat();      
+      calc_stat();
       measure_power_dbm();
       disp_update_power();
 
@@ -188,7 +188,7 @@ void set_modulation(modulation_t mod)
   mode_freq_offset = mod_table[mod].freq_offset;
   mode_freqoffset_phasestep = PHASESTEP(mode_freq_offset);
   cw_tone_phasestep = PHASESTEP(uistat.cw_tone_freq);
-  
+
   uistat.modulation = mod;
   disp_update();
 }
@@ -250,7 +250,7 @@ save_config_current_channel(void)
   int channel = uistat.channel;
   config.channels[channel].freq = uistat.freq;
   config.channels[channel].modulation = uistat.modulation;
-  
+
   config.uistat = uistat;
   config_save();
 }
@@ -304,7 +304,7 @@ static void cmd_tone(BaseSequentialStream *chp, int argc, char *argv[])
     } else if (argc == 1) {
       freq = atoi(argv[0]);
     }
-    
+
     I2SD2.spi->I2SCFGR &= ~SPI_I2SCFGR_I2SE;
     //I2SD2.spi->CR2 = 0;
     tone_generate(freq);
@@ -318,7 +318,7 @@ static void cmd_data(BaseSequentialStream *chp, int argc, char *argv[])
   (void)argc;
   (void)argv;
   int16_t *buf = rx_buffer;
-  
+
   if (argc > 0) {
     switch (atoi(argv[0])) {
     case 0:
@@ -373,7 +373,7 @@ calc_stat(void)
   stat.min[1] = min1;
   stat.max[0] = max0;
   stat.max[1] = max1;
-}  
+}
 
 int16_t measured_power_dbm;
 
@@ -384,7 +384,7 @@ measure_power_dbm(void)
   int agcgain = uistat.rfgain;
   if (uistat.agcmode != AGC_MANUAL)
     agcgain = tlv320aic3204_get_left_agc_gain();
-  
+
   int dbm =                    // fixed point 8.8 format
     6 * log2_q31(stat.rms[0])  // 6dB/bit
     - (agcgain << 7);          // 0.5dB/agcgain
@@ -444,7 +444,7 @@ static void cmd_stat(BaseSequentialStream *chp, int argc, char *argv[])
   chprintf(chp, "temp: %d\r\n", adc_single_read(ADC1, ADC1_CHANNEL_TEMP));
   chprintf(chp, "bat: %d\r\n", adc_single_read(ADC1, ADC1_CHANNEL_BAT));
   chprintf(chp, "vref: %d\r\n", adc_single_read(ADC1, ADC1_CHANNEL_VREF));
-  
+
 #if 0
   p = &tx_buffer[0];
   acc0 = acc1 = 0;
@@ -489,7 +489,7 @@ static void cmd_gain(BaseSequentialStream *chp, int argc, char *argv[])
     gain = atoi(argv[0]);
     tlv320aic3204_set_gain(gain, gain);
     uistat.rfgain = gain;
-    
+
     if (argc >= 2) {
       int adjust = 0;
       gain = atoi(argv[1]);
@@ -700,7 +700,7 @@ static void cmd_cwtone(BaseSequentialStream *chp, int argc, char *argv[])
 static void cmd_fs(BaseSequentialStream *chp, int argc, char *argv[])
 {
   int fs = 0;
-  
+
   if (argc == 1) {
     fs = atoi(argv[0]);
   }
@@ -823,7 +823,7 @@ static void cmd_save(BaseSequentialStream *chp, int argc, char *argv[])
 
   config.uistat = uistat;
   config_save();
-  
+
   chprintf(chp, "Config saved.\r\n");
 }
 
@@ -963,7 +963,7 @@ int __attribute__((noreturn)) main(void)
     palSetGroupMode(GPIOA, 1, 0, PAL_MODE_INPUT_PULLUP);
     palSetGroupMode(GPIOB, 6, 0, PAL_MODE_INPUT_PULLUP);
   }
-  
+
   // copy uistat from uistat
   uistat = config.uistat;
 
@@ -982,7 +982,6 @@ int __attribute__((noreturn)) main(void)
   adcSTM32EnableVBAT(&ADCD1);
   adcSTM32EnableVREF(&ADCD1);
 
-  
   i2cStart(&I2CD1, &i2ccfg);
   /*
    * Initializes a serial-over-USB CDC driver.
@@ -1011,9 +1010,9 @@ int __attribute__((noreturn)) main(void)
   i2sStart(&I2SD2, &i2sconfig);
   i2sStartExchange(&I2SD2);
 #endif
-  
+
   dsp_init();
-  
+
   /*
    * SPI LCD Initialize
    */

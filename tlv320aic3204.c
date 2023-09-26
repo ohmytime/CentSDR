@@ -49,7 +49,7 @@ tlv320aic3204_config(const uint8_t *data)
 }
 
 static const uint8_t conf_data_pll[] = {
-  // len, ( reg, data ), 
+  // len, ( reg, data ),
   2, 0x00, 0x00, /* Initialize to Page 0 */
   2, 0x01, 0x01, /* Initialize the device through software reset */
   2, 0x04, 0x43, /* PLL Clock High, MCLK, PLL */
@@ -85,7 +85,7 @@ static const uint8_t conf_data_clk[] = {
   2, 0x0e, 0x80,
   //2, 0x3c, 0x08, /* Set the DAC Mode to PRB_P8 */
   2, 0x3c, 25, /* Set the DAC Mode to PRB_P25 */
-  2, 0x1b, 0x0c, /* Set the BCLK,WCLK as output */    
+  2, 0x1b, 0x0c, /* Set the BCLK,WCLK as output */
   2, 0x1e, 0x80 + 28, /* Enable the BCLKN divider with value 28 */
   2, 0x25, 0xee, /* DAC power up */
 
@@ -102,7 +102,7 @@ static const uint8_t conf_data_clk_96kHz[] = {
   2, 0x0d, 0x00, /* Program the OSR of DAC to 64 */
   2, 0x0e, 0x40,
   2, 0x3c, 0x08, /* Set the DAC Mode to PRB_P8 */
-  2, 0x1b, 0x0c, /* Set the BCLK,WCLK as output */    
+  2, 0x1b, 0x0c, /* Set the BCLK,WCLK as output */
   2, 0x1e, 0x80 + 14, /* Enable the BCLKN divider with value 14 */
   2, 0x25, 0xee, /* DAC power up */
 
@@ -120,7 +120,7 @@ static const uint8_t conf_data_clk_192kHz[] = {
   2, 0x0e, 0x20,
   2, 0x3c, 17, //0x08, /* Set the DAC Mode to PRB_P17 (reduce resource) */
   //2, 0x3c, 25, /* Set the DAC Mode to PRB_P25 */
-  2, 0x1b, 0x0c, /* Set the BCLK,WCLK as output */    
+  2, 0x1b, 0x0c, /* Set the BCLK,WCLK as output */
   2, 0x1e, 0x80 + 7, /* Enable the BCLKN divider with value 7 */
   2, 0x25, 0xee, /* DAC power up */
 
@@ -166,8 +166,8 @@ const uint8_t conf_data_unmute[] = {
   2, 0x3f, 0xd6, /* Power up the Left and Right DAC Channels with route the Left Audio digital data to Left Channel DAC and Right Audio digital data to Right Channel DAC */
   2, 0x40, 0x00, /* Unmute the DAC digital volume control */
   2, 0x51, 0xc0, /* Power up Left and Right ADC Channels */
-  2, 0x52, 0x00, /* Unmute Left and Right ADC Digital Volume Control */    
-  2, 0x43, 0x93, /* Enable Headphone detection, Debounce 256ms, Button Debounce 32ms */    
+  2, 0x52, 0x00, /* Unmute Left and Right ADC Digital Volume Control */
+  2, 0x43, 0x93, /* Enable Headphone detection, Debounce 256ms, Button Debounce 32ms */
   0 // sentinel
 };
 
@@ -251,7 +251,7 @@ void tlv320aic3204_set_volume(int gain)
 {
     if (gain > 29)
         gain = 29;
-    else if (gain < -6) 
+    else if (gain < -6)
         gain = 0x40;
     else
         gain &= 0x3f;
@@ -269,7 +269,7 @@ void tlv320aic3204_agc_config(tlv320aic3204_agc_config_t *conf)
       ctrl = 0;
     } else {
       ctrl = 0x80
-        | ((conf->target_level & 0x7) << 4) 
+        | ((conf->target_level & 0x7) << 4)
         | (conf->gain_hysteresis & 0x3);
     }
     tlv320aic3204_write(0x00, 0x00); /* Select Page 0 */
@@ -295,14 +295,14 @@ void tlv320aic3204_agc_config(tlv320aic3204_agc_config_t *conf)
 const uint8_t adc_iir_filter_dcreject[] = {
   /* len, page, reg, data.... */
   /* left channel C4 - C6 */
-  12, 8, 24, 
+  12, 8, 24,
   /* Pg8 Reg24-35 */
   0x7f, 0xfa, 0xda, 0x00,
   0x80, 0x05, 0x26, 0x00,
   0x7f, 0xf5, 0xb5, 0x00,
-    
+
   /* right channel C36 - C38 */
-  12, 9, 32, 
+  12, 9, 32,
   /* Pg9 Reg 32-43 */
   0x7f, 0xfa, 0xda, 0x00,
   0x80, 0x05, 0x26, 0x00,
@@ -314,14 +314,14 @@ const uint8_t adc_iir_filter_dcreject[] = {
 const uint8_t adc_iir_filter_dcreject2[] = {
   /* len, page, reg, data.... */
   /* left channel C4 - C6 */
-  12, 8, 24, 
+  12, 8, 24,
   /* Pg8 Reg24-35 */
   0x7f, 0xfa, 0xda, 0x00,
   0x80, 0x05, 0x26, 0x00,
   0x7f, 0xf5, 0xb5, 0x00,
-    
+
   /* right channel C36 - C38 */
-  12, 9, 32, 
+  12, 9, 32,
   /* Pg9 Reg 32-43 */
   0x80, 0x06, 0x37, 0x00,
   0x7f, 0xfa, 0xeb, 0x00,
@@ -332,14 +332,14 @@ const uint8_t adc_iir_filter_dcreject2[] = {
 const uint8_t adc_iir_filter_default[] = {
   /* len, page, reg, data.... */
   /* left channel C4 - C6 */
-  12, 8, 24, 
+  12, 8, 24,
   /* Pg8 Reg24-35 */
   0x7f, 0xff, 0xff, 0x00,
   0x00, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00,
-    
+
   /* right channel C36 - C38 */
-  12, 9, 32, 
+  12, 9, 32,
   /* Pg9 Reg 32-43 */
   0x7f, 0xff, 0xff, 0x00,
   0x00, 0x00, 0x00, 0x00,
@@ -352,7 +352,7 @@ void tlv320aic3204_config_adc_filter(int enable)
   const uint8_t *p = adc_iir_filter_default;
   if (enable)
     p = adc_iir_filter_dcreject2;
-  
+
   while (*p != 0) {
     uint8_t len = *p++;
     uint8_t page = *p++;
@@ -412,17 +412,17 @@ void tlv320aic3204_config_adc_filter2(double adj)
 
 int tlv320aic3204_get_sticky_flag_register(void)
 {
-    return tlv320aic3204_read(0x2a); /* Sticky Flag Register */
+  return tlv320aic3204_read(0x2a); /* Sticky Flag Register */
 }
 
 int8_t tlv320aic3204_get_left_agc_gain(void)
 {
-    return tlv320aic3204_read(0x5d); /* Left Channel AGC Gain Flag */
+  return tlv320aic3204_read(0x5d); /* Left Channel AGC Gain Flag */
 }
 
 int8_t tlv320aic3204_get_right_agc_gain(void)
 {
-    return tlv320aic3204_read(0x65); /* Right Channel AGC Gain Flag */
+  return tlv320aic3204_read(0x65); /* Right Channel AGC Gain Flag */
 }
 
 void tlv320aic3204_set_adc_phase_adjust(int8_t adjust)
@@ -443,12 +443,12 @@ void tlv320aic3204_beep(void)
   tlv320aic3204_write(0x3c, 25); // select PRB_P25 to beep
   tlv320aic3204_write(0x25, 0xee); // DAC power on
   */
-  
+
   // set duration
-  tlv320aic3204_write(0x4a, 0x10); 
+  tlv320aic3204_write(0x4a, 0x10);
   tlv320aic3204_write(0x4b, 0x00);
   // beep
-  tlv320aic3204_write(0x47, 0x80); 
+  tlv320aic3204_write(0x47, 0x80);
 
   /*
   tlv320aic3204_write(0x3c, 17); // restore to PRB_P17
