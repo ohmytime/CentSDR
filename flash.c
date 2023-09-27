@@ -64,7 +64,6 @@ void flash_unlock(void)
   FLASH->KEYR = 0xCDEF89AB;
 }
 
-
 static uint32_t
 checksum(const void *start, size_t len)
 {
@@ -75,7 +74,6 @@ checksum(const void *start, size_t len)
     value ^= *p++;
   return value;
 }
-
 
 #define FLASH_PAGESIZE 0x800
 

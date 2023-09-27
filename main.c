@@ -22,93 +22,91 @@ static void measure_adc(void);
 static THD_WORKING_AREA(waThread1, 128);
 static __attribute__((noreturn)) THD_FUNCTION(Thread1, arg)
 {
-    (void)arg;
-    int count;
-    chRegSetThreadName("blink");
-    while (1) {
-      systime_t time = 100;
-      chThdSleepMilliseconds(time);
+  (void)arg;
+  int count;
+  chRegSetThreadName("blink");
+  while (1) {
+    systime_t time = 100;
+    chThdSleepMilliseconds(time);
 
-      calc_stat();
-      measure_power_dbm();
-      disp_update_power();
+    calc_stat();
+    measure_power_dbm();
+    disp_update_power();
 
-      if (++count == 10) {
-        stat.fps = stat.fps_count;
-        stat.fps_count = 0;
-        stat.overflow = stat.overflow_count;
-        stat.overflow_count = 0;
-        count = 0;
+    if (++count == 10) {
+      stat.fps = stat.fps_count;
+      stat.fps_count = 0;
+      stat.overflow = stat.overflow_count;
+      stat.overflow_count = 0;
+      count = 0;
 
-        measure_adc();
-        disp_update();
-      }
+      measure_adc();
+      disp_update();
     }
+  }
 }
 
-static void cmd_reset(BaseSequentialStream *chp, int argc, char *argv[])
+static void
+cmd_reset(BaseSequentialStream* chp, int argc, char* argv[])
 {
-    (void)argc;
-    (void)argv;
+  (void)argc;
+  (void)argv;
 
-    chprintf(chp, "Performing reset\r\n");
+  chprintf(chp, "Performing reset\r\n");
 
-    //rccEnableWWDG(FALSE);
+  // rccEnableWWDG(FALSE);
 
-    WWDG->CFR = 0x60;
-    WWDG->CR = 0xff;
+  WWDG->CFR = 0x60;
+  WWDG->CR = 0xff;
 
-    while (1)
-	;
+  while (1)
+    ;
 }
 
-static const I2CConfig i2ccfg = {
-  0x00902025, //voodoo magic
-  //0x00420F13,  // 100kHz @ 72MHz
-  0,
-  0
-};
+static const I2CConfig i2ccfg = { 0x00902025,     // voodoo magic
+                                  // 0x00420F13,  // 100kHz @ 72MHz
+                                  0,
+                                  0 };
 
-static void cmd_freq(BaseSequentialStream *chp, int argc, char *argv[])
+static void
+cmd_freq(BaseSequentialStream* chp, int argc, char* argv[])
 {
-    int freq;
-    if (argc != 1) {
-        chprintf(chp, "usage: freq {frequency(Hz)}\r\n");
-        return;
-    }
-    freq = atoi(argv[0]);
-    si5351_set_frequency(freq);
+  int freq;
+  if (argc != 1) {
+    chprintf(chp, "usage: freq {frequency(Hz)}\r\n");
+    return;
+  }
+  freq = atoi(argv[0]);
+  si5351_set_frequency(freq);
 }
 
-static void cmd_tune(BaseSequentialStream *chp, int argc, char *argv[])
+static void
+cmd_tune(BaseSequentialStream* chp, int argc, char* argv[])
 {
-    int freq;
-    if (argc != 1) {
-        chprintf(chp, "usage: tune {frequency(Hz)}\r\n");
-        return;
-    }
-    freq = atoi(argv[0]);
-    set_tune(freq);
+  int freq;
+  if (argc != 1) {
+    chprintf(chp, "usage: tune {frequency(Hz)}\r\n");
+    return;
+  }
+  freq = atoi(argv[0]);
+  set_tune(freq);
 
-    uistat.freq = freq;
-    uistat.mode = FREQ;
-    disp_update();
+  uistat.freq = freq;
+  uistat.mode = FREQ;
+  disp_update();
 }
-
 
 int16_t rx_buffer[AUDIO_BUFFER_LEN * 2];
 int16_t tx_buffer[AUDIO_BUFFER_LEN * 2];
 
 const buffer_ref_t buffers_table[BUFFERS_MAX] = {
-  { BT_C_INTERLEAVE, AUDIO_BUFFER_LEN, rx_buffer,  NULL },
-  { BT_IQ,           AUDIO_BUFFER_LEN, buffer[0],  buffer[1] },
-  { BT_IQ,           AUDIO_BUFFER_LEN, buffer2[0], buffer2[1] },
-  { BT_R_INTERLEAVE, AUDIO_BUFFER_LEN, tx_buffer,  NULL }
+  { BT_C_INTERLEAVE, AUDIO_BUFFER_LEN, rx_buffer, NULL },
+  { BT_IQ, AUDIO_BUFFER_LEN, buffer[0], buffer[1] },
+  { BT_IQ, AUDIO_BUFFER_LEN, buffer2[0], buffer2[1] },
+  { BT_R_INTERLEAVE, AUDIO_BUFFER_LEN, tx_buffer, NULL }
 };
 
-const char *agcmode_table[] = {
-  "manual", "slow", "mid", "fast"
-};
+const char* agcmode_table[] = { "manual", "slow", "mid", "fast" };
 
 signal_process_func_t signal_process = am_demod;
 int16_t mode_freq_offset = AM_FREQ_OFFSET;
@@ -126,13 +124,13 @@ config_t config = {
   },
   .uistat = {
     .mode = CHANNEL,
-	.channel = 0,
+	  .channel = 0,
     .freq = 567000,
-	.digit = 3,
-	.modulation = MOD_AM,
-	.volume = 0,
-	.rfgain = 40, // 0 ~ 95
-	//.agcmode = AGC_MANUAL,
+	  .digit = 3,
+	  .modulation = MOD_AM,
+	  .volume = 0,
+	  .rfgain = 40, // 0 ~ 95
+	  // .agcmode = AGC_MANUAL,
     .agcmode = AGC_MID,
     .cw_tone_freq = 800
   },
@@ -162,21 +160,23 @@ config_t config = {
   .lcd_rotation = 0
 };
 
-struct {
+struct
+{
   signal_process_func_t demod_func;
   int16_t freq_offset;
   int16_t fs;
-  const char *name;
+  const char* name;
 } mod_table[] = {
-  { cw_demod, AM_FREQ_OFFSET,  48, "cw" },
-  { lsb_demod,             0,  48, "lsb" },
-  { usb_demod,             0,  48, "usb" },
-  { am_demod, AM_FREQ_OFFSET,  48, "am" },
-  { fm_demod,              0, 192, "fm" },
-  { fm_demod_stereo,       0, 192, "fms" },
+  { cw_demod, AM_FREQ_OFFSET, 48, "cw" },
+  { lsb_demod, 0, 48, "lsb" },
+  { usb_demod, 0, 48, "usb" },
+  { am_demod, AM_FREQ_OFFSET, 48, "am" },
+  { fm_demod, 0, 192, "fm" },
+  { fm_demod_stereo, 0, 192, "fms" },
 };
 
-void set_modulation(modulation_t mod)
+void
+set_modulation(modulation_t mod)
 {
   if (mod >= MOD_MAX)
     return;
@@ -228,14 +228,14 @@ set_fs(int fs)
 void
 update_cwtone(void)
 {
-    cw_tone_phasestep = PHASESTEP(uistat.cw_tone_freq);
+  cw_tone_phasestep = PHASESTEP(uistat.cw_tone_freq);
 }
 
 void
 update_iqbal(void)
 {
-    double value = config.freq_inverse - (double)uistat.iqbal / 10000.0;
-    tlv320aic3204_config_adc_filter2(value);
+  double value = config.freq_inverse - (double)uistat.iqbal / 10000.0;
+  tlv320aic3204_config_adc_filter2(value);
 }
 
 void
@@ -255,12 +255,13 @@ save_config_current_channel(void)
   config_save();
 }
 
-void i2s_end_callback(I2SDriver *i2sp, size_t offset, size_t n)
+void
+i2s_end_callback(I2SDriver* i2sp, size_t offset, size_t n)
 {
   int32_t cnt_s = port_rt_get_counter_value();
   int32_t cnt_e;
-  int16_t *p = &rx_buffer[offset];
-  int16_t *q = &tx_buffer[offset];
+  int16_t* p = &rx_buffer[offset];
+  int16_t* q = &tx_buffer[offset];
   (void)i2sp;
   palSetPad(GPIOC, GPIOC_LED);
 
@@ -280,90 +281,97 @@ static const I2SConfig i2sconfig = {
   rx_buffer, // RX Buffer
   AUDIO_BUFFER_LEN * 2,
   i2s_end_callback, // tx callback
-  NULL, // rx callback
-  0, // i2scfgr
-  2 // i2spr
+  NULL,             // rx callback
+  0,                // i2scfgr
+  2                 // i2spr
 };
 
-static void tone_generate(int freq)
+static void
+tone_generate(int freq)
 {
-    int i;
-    for (i = 0; i < AUDIO_BUFFER_LEN; i++) {
-      int16_t x = (int16_t)(sin(2*M_PI * i * freq / FS) * 10000);
-      tx_buffer[i*2  ] = x;
-      tx_buffer[i*2+1] = x;
-    }
+  int i;
+  for (i = 0; i < AUDIO_BUFFER_LEN; i++) {
+    int16_t x = (int16_t)(sin(2 * M_PI * i * freq / FS) * 10000);
+    tx_buffer[i * 2] = x;
+    tx_buffer[i * 2 + 1] = x;
+  }
 }
 
-static void cmd_tone(BaseSequentialStream *chp, int argc, char *argv[])
+static void
+cmd_tone(BaseSequentialStream* chp, int argc, char* argv[])
 {
-    int freq = 440;
-    if (argc > 1) {
-        chprintf(chp, "usage: tone {audio frequency(Hz)}\r\n");
-        return;
-    } else if (argc == 1) {
-      freq = atoi(argv[0]);
-    }
+  int freq = 440;
+  if (argc > 1) {
+    chprintf(chp, "usage: tone {audio frequency(Hz)}\r\n");
+    return;
+  } else if (argc == 1) {
+    freq = atoi(argv[0]);
+  }
 
-    I2SD2.spi->I2SCFGR &= ~SPI_I2SCFGR_I2SE;
-    //I2SD2.spi->CR2 = 0;
-    tone_generate(freq);
-    I2SD2.spi->I2SCFGR |= SPI_I2SCFGR_I2SE;
-    //I2SD2.spi->CR2 = SPI_CR2_TXDMAEN;
+  I2SD2.spi->I2SCFGR &= ~SPI_I2SCFGR_I2SE;
+  // I2SD2.spi->CR2 = 0;
+  tone_generate(freq);
+  I2SD2.spi->I2SCFGR |= SPI_I2SCFGR_I2SE;
+  // I2SD2.spi->CR2 = SPI_CR2_TXDMAEN;
 }
 
-static void cmd_data(BaseSequentialStream *chp, int argc, char *argv[])
+static void
+cmd_data(BaseSequentialStream* chp, int argc, char* argv[])
 {
   int i, j;
   (void)argc;
   (void)argv;
-  int16_t *buf = rx_buffer;
+  int16_t* buf = rx_buffer;
 
   if (argc > 0) {
     switch (atoi(argv[0])) {
-    case 0:
-      break;
-    case 1:
-      buf = tx_buffer;
-      break;
-    case 2:
-      buf = buffer[0];
-      break;
-    case 3:
-      buf = buffer2[0];
-      break;
-    default:
-      chprintf(chp, "unknown source\r\n");
-      return;
+      case 0:
+        break;
+      case 1:
+        buf = tx_buffer;
+        break;
+      case 2:
+        buf = buffer[0];
+        break;
+      case 3:
+        buf = buffer2[0];
+        break;
+      default:
+        chprintf(chp, "unknown source\r\n");
+        return;
     }
   }
 
-  //i2sStopExchange(&I2SD2);
-  for (i = 0; i < AUDIO_BUFFER_LEN; ) {
+  // i2sStopExchange(&I2SD2);
+  for (i = 0; i < AUDIO_BUFFER_LEN;) {
     for (j = 0; j < 16; j++, i++) {
       chprintf(chp, "%04x ", 0xffff & (int)buf[i]);
     }
     chprintf(chp, "\r\n");
   }
-  //i2sStartExchange(&I2SD2);
+  // i2sStartExchange(&I2SD2);
 }
 
 static void
 calc_stat(void)
 {
-  int16_t *p = &rx_buffer[0];
+  int16_t* p = &rx_buffer[0];
   int16_t min0 = 0, min1 = 0;
   int16_t max0 = 0, max1 = 0;
   int32_t count = AUDIO_BUFFER_LEN;
   int i;
   float accx0 = 0, accx1 = 0;
-  for (i = 0; i < AUDIO_BUFFER_LEN*2; i += 2) {
-    if (min0 > p[i]) min0 = p[i];
-    if (min1 > p[i+1]) min1 = p[i+1];
-    if (max0 < p[i]) max0 = p[i];
-    if (max1 < p[i+1]) max1 = p[i+1];
+  for (i = 0; i < AUDIO_BUFFER_LEN * 2; i += 2) {
+    if (min0 > p[i])
+      min0 = p[i];
+    if (min1 > p[i + 1])
+      min1 = p[i + 1];
+    if (max0 < p[i])
+      max0 = p[i];
+    if (max1 < p[i + 1])
+      max1 = p[i + 1];
     float x0 = p[i];
-    float x1 = p[i+1];
+    float x1 = p[i + 1];
     accx0 += x0 * x0;
     accx1 += x1 * x1;
   }
@@ -385,21 +393,22 @@ measure_power_dbm(void)
   if (uistat.agcmode != AGC_MANUAL)
     agcgain = tlv320aic3204_get_left_agc_gain();
 
-  int dbm =                    // fixed point 8.8 format
-    6 * log2_q31(stat.rms[0])  // 6dB/bit
-    - (agcgain << 7);          // 0.5dB/agcgain
+  int dbm =                   // fixed point 8.8 format
+    6 * log2_q31(stat.rms[0]) // 6dB/bit
+    - (agcgain << 7);         // 0.5dB/agcgain
   dbm -= 116 << 8;
   measured_power_dbm = dbm;
 }
 
-uint16_t adc_single_read(ADC_TypeDef *adc, uint32_t chsel)
+uint16_t
+adc_single_read(ADC_TypeDef* adc, uint32_t chsel)
 {
   /* ADC setup */
-  adc->ISR    = adc->ISR;
-  adc->IER    = 0;
-  adc->SMPR1  = ADC_SMPR1_SMP0_2; // 19.5 cycle
-  adc->CFGR   = 0; // 12bit
-  adc->SQR1   = chsel << 6;
+  adc->ISR = adc->ISR;
+  adc->IER = 0;
+  adc->SMPR1 = ADC_SMPR1_SMP0_2; // 19.5 cycle
+  adc->CFGR = 0;                 // 12bit
+  adc->SQR1 = chsel << 6;
 
   /* ADC conversion start.*/
   adc->CR |= ADC_CR_ADSTART;
@@ -413,14 +422,16 @@ uint16_t adc_single_read(ADC_TypeDef *adc, uint32_t chsel)
 #define ADC1_CHANNEL_BAT  17
 #define ADC1_CHANNEL_VREF 18
 
-static void measure_adc(void)
+static void
+measure_adc(void)
 {
   stat.temperature = adc_single_read(ADC1, ADC1_CHANNEL_TEMP);
   stat.battery = adc_single_read(ADC1, ADC1_CHANNEL_BAT);
   stat.vref = adc_single_read(ADC1, ADC1_CHANNEL_VREF);
 }
 
-static void cmd_stat(BaseSequentialStream *chp, int argc, char *argv[])
+static void
+cmd_stat(BaseSequentialStream* chp, int argc, char* argv[])
 {
   (void)argc;
   (void)argv;
@@ -430,15 +441,26 @@ static void cmd_stat(BaseSequentialStream *chp, int argc, char *argv[])
   chprintf(chp, "min: %d %d\r\n", stat.min[0], stat.min[1]);
   chprintf(chp, "max: %d %d\r\n", stat.max[0], stat.max[1]);
   chprintf(chp, "callback count: %d\r\n", stat.callback_count);
-  chprintf(chp, "load: %d%% (%d/%d)\r\n", stat.busy_cycles * 100 / stat.interval_cycles, stat.busy_cycles, stat.interval_cycles);
+  chprintf(chp,
+           "load: %d%% (%d/%d)\r\n",
+           stat.busy_cycles * 100 / stat.interval_cycles,
+           stat.busy_cycles,
+           stat.interval_cycles);
   chprintf(chp, "fps: %d\r\n", stat.fps);
   chprintf(chp, "overflow: %d\r\n", stat.overflow);
   int gain0 = tlv320aic3204_get_left_agc_gain();
   int gain1 = tlv320aic3204_get_right_agc_gain();
   chprintf(chp, "agc gain: %d %d\r\n", gain0, gain1);
 
-  chprintf(chp, "fm stereo: %d %d\r\n", stereo_separate_state.sdi, stereo_separate_state.sdq);
-  chprintf(chp, "  corr: %d %d %d\r\n", stereo_separate_state.corr, stereo_separate_state.corr_ave, stereo_separate_state.corr_std);
+  chprintf(chp,
+           "fm stereo: %d %d\r\n",
+           stereo_separate_state.sdi,
+           stereo_separate_state.sdq);
+  chprintf(chp,
+           "  corr: %d %d %d\r\n",
+           stereo_separate_state.corr,
+           stereo_separate_state.corr_ave,
+           stereo_separate_state.corr_std);
   chprintf(chp, "  int: %d\r\n", stereo_separate_state.integrator);
 
   chprintf(chp, "temp: %d\r\n", adc_single_read(ADC1, ADC1_CHANNEL_TEMP));
@@ -458,176 +480,190 @@ static void cmd_stat(BaseSequentialStream *chp, int argc, char *argv[])
 #endif
 }
 
-static void cmd_power(BaseSequentialStream *chp, int argc, char *argv[])
+static void
+cmd_power(BaseSequentialStream* chp, int argc, char* argv[])
 {
   (void)argc;
   (void)argv;
-  chprintf(chp, "power: %d.%01ddBm\r\n", measured_power_dbm >> 8,
-           ((measured_power_dbm&0xff) * 10) >> 8);
+  chprintf(chp,
+           "power: %d.%01ddBm\r\n",
+           measured_power_dbm >> 8,
+           ((measured_power_dbm & 0xff) * 10) >> 8);
 }
 
-static void cmd_impedance(BaseSequentialStream *chp, int argc, char *argv[])
+static void
+cmd_impedance(BaseSequentialStream* chp, int argc, char* argv[])
 {
-    int imp;
-    if (argc != 1) {
-        chprintf(chp, "usage: imp {gain(1-3)}\r\n");
-        return;
-    }
+  int imp;
+  if (argc != 1) {
+    chprintf(chp, "usage: imp {gain(1-3)}\r\n");
+    return;
+  }
 
-    imp = atoi(argv[0]);
-    tlv320aic3204_set_impedance(imp);
+  imp = atoi(argv[0]);
+  tlv320aic3204_set_impedance(imp);
 }
 
-static void cmd_gain(BaseSequentialStream *chp, int argc, char *argv[])
+static void
+cmd_gain(BaseSequentialStream* chp, int argc, char* argv[])
 {
-    int gain;
-    if (argc != 1 && argc != 2 && argc != 3) {
-        chprintf(chp, "usage: gain {pga gain(0-95)} [digital gain(-24-40)] [adjust]\r\n");
-        return;
+  int gain;
+  if (argc != 1 && argc != 2 && argc != 3) {
+    chprintf(
+      chp, "usage: gain {pga gain(0-95)} [digital gain(-24-40)] [adjust]\r\n");
+    return;
+  }
+
+  gain = atoi(argv[0]);
+  tlv320aic3204_set_gain(gain, gain);
+  uistat.rfgain = gain;
+
+  if (argc >= 2) {
+    int adjust = 0;
+    gain = atoi(argv[1]);
+    if (argc == 3) {
+      adjust = atoi(argv[2]);
     }
+    tlv320aic3204_set_digital_gain(gain, gain + adjust);
+    uistat.rfgain += gain;
+  }
 
-    gain = atoi(argv[0]);
-    tlv320aic3204_set_gain(gain, gain);
-    uistat.rfgain = gain;
-
-    if (argc >= 2) {
-      int adjust = 0;
-      gain = atoi(argv[1]);
-      if (argc == 3) {
-        adjust = atoi(argv[2]);
-      }
-      tlv320aic3204_set_digital_gain(gain, gain + adjust);
-      uistat.rfgain += gain;
-    }
-
-    disp_update();
+  disp_update();
 }
 
-static void cmd_phase(BaseSequentialStream *chp, int argc, char *argv[])
+static void
+cmd_phase(BaseSequentialStream* chp, int argc, char* argv[])
 {
-    int value;
-    if (argc != 1) {
-        chprintf(chp, "usage: phase {adjust value(-128-127)}\r\n");
-        return;
-    }
+  int value;
+  if (argc != 1) {
+    chprintf(chp, "usage: phase {adjust value(-128-127)}\r\n");
+    return;
+  }
 
-    value = atoi(argv[0]);
-    tlv320aic3204_set_adc_phase_adjust(value);
+  value = atoi(argv[0]);
+  tlv320aic3204_set_adc_phase_adjust(value);
 }
 
-static void cmd_finegain(BaseSequentialStream *chp, int argc, char *argv[])
+static void
+cmd_finegain(BaseSequentialStream* chp, int argc, char* argv[])
 {
-    int g1 = 0, g2 = 0;
-    if (argc != 1 && argc != 2) {
-        chprintf(chp, "usage: gainadjust {gain1 gain2} (0 - -4)\r\n");
-        return;
-    }
-    g1 = atoi(argv[0]);
-    if (argc == 2) {
-      g2 = atoi(argv[1]);
-    }
-    tlv320aic3204_set_adc_fine_gain_adjust(g1, g2);
+  int g1 = 0, g2 = 0;
+  if (argc != 1 && argc != 2) {
+    chprintf(chp, "usage: gainadjust {gain1 gain2} (0 - -4)\r\n");
+    return;
+  }
+  g1 = atoi(argv[0]);
+  if (argc == 2) {
+    g2 = atoi(argv[1]);
+  }
+  tlv320aic3204_set_adc_fine_gain_adjust(g1, g2);
 }
 
-static void cmd_iqbal(BaseSequentialStream *chp, int argc, char *argv[])
+static void
+cmd_iqbal(BaseSequentialStream* chp, int argc, char* argv[])
 {
-    if (argc != 1) {
-        chprintf(chp, "usage: iqbal {coeff}\r\n");
-        return;
-    }
-    uistat.iqbal = atoi(argv[0]);
-    update_iqbal();
+  if (argc != 1) {
+    chprintf(chp, "usage: iqbal {coeff}\r\n");
+    return;
+  }
+  uistat.iqbal = atoi(argv[0]);
+  update_iqbal();
 }
 
-static void cmd_volume(BaseSequentialStream *chp, int argc, char *argv[])
+static void
+cmd_volume(BaseSequentialStream* chp, int argc, char* argv[])
 {
-    int gain;
-    if (argc != 1) {
-        chprintf(chp, "usage: volume {gain(-7-29)}\r\n");
-        return;
-    }
+  int gain;
+  if (argc != 1) {
+    chprintf(chp, "usage: volume {gain(-7-29)}\r\n");
+    return;
+  }
 
-    gain = atoi(argv[0]);
-    tlv320aic3204_set_volume(gain);
-    uistat.volume = gain;
-    disp_update();
+  gain = atoi(argv[0]);
+  tlv320aic3204_set_volume(gain);
+  uistat.volume = gain;
+  disp_update();
 }
 
-static void cmd_dcreject(BaseSequentialStream *chp, int argc, char *argv[])
+static void
+cmd_dcreject(BaseSequentialStream* chp, int argc, char* argv[])
 {
-    int value;
-    if (argc != 1) {
-        chprintf(chp, "usage: dcreject {0|1}\r\n");
-        return;
-    }
-    value = atoi(argv[0]);
-    tlv320aic3204_config_adc_filter(value);
+  int value;
+  if (argc != 1) {
+    chprintf(chp, "usage: dcreject {0|1}\r\n");
+    return;
+  }
+  value = atoi(argv[0]);
+  tlv320aic3204_config_adc_filter(value);
 }
 
-static void cmd_dac(BaseSequentialStream *chp, int argc, char *argv[])
+static void
+cmd_dac(BaseSequentialStream* chp, int argc, char* argv[])
 {
-    int value;
-    if (argc != 1) {
-        chprintf(chp, "usage: dac {value(0-4095)}\r\n");
-        chprintf(chp, "current value: %d\r\n", config.dac_value);
-        return;
-    }
-    value = atoi(argv[0]);
-    config.dac_value = value;
-    dacPutChannelX(&DACD1, 0, value);
+  int value;
+  if (argc != 1) {
+    chprintf(chp, "usage: dac {value(0-4095)}\r\n");
+    chprintf(chp, "current value: %d\r\n", config.dac_value);
+    return;
+  }
+  value = atoi(argv[0]);
+  config.dac_value = value;
+  dacPutChannelX(&DACD1, 0, value);
 }
 
-static void cmd_agc(BaseSequentialStream *chp, int argc, char *argv[])
+static void
+cmd_agc(BaseSequentialStream* chp, int argc, char* argv[])
 {
-    const char *cmd;
-    if (argc == 0) {
-      chprintf(chp, "usage: agc {cmd} [args...]\r\n");
-      chprintf(chp, "\tmanual/slow/mid/fast\r\n");
-      chprintf(chp, "\tenable/disable\r\n");
-      chprintf(chp, "\tlevel {0-7}\r\n");
-      chprintf(chp, "\thysteresis {0-3}\r\n");
-      chprintf(chp, "\tattack {0-31} [scale:0-7]\r\n");
-      chprintf(chp, "\tdecay {0-31} [scale:0-7]\r\n");
-      chprintf(chp, "\tmaxgain {0-116}\r\n");
-      return;
-    }
+  const char* cmd;
+  if (argc == 0) {
+    chprintf(chp, "usage: agc {cmd} [args...]\r\n");
+    chprintf(chp, "\tmanual/slow/mid/fast\r\n");
+    chprintf(chp, "\tenable/disable\r\n");
+    chprintf(chp, "\tlevel {0-7}\r\n");
+    chprintf(chp, "\thysteresis {0-3}\r\n");
+    chprintf(chp, "\tattack {0-31} [scale:0-7]\r\n");
+    chprintf(chp, "\tdecay {0-31} [scale:0-7]\r\n");
+    chprintf(chp, "\tmaxgain {0-116}\r\n");
+    return;
+  }
 
-    cmd = argv[0];
-    if (strncmp(cmd, "manual", 3) == 0) {
-      set_agc_mode(AGC_MANUAL);
-    } else if (strncmp(cmd, "slow", 2) == 0) {
-      set_agc_mode(AGC_SLOW);
-    } else if (strncmp(cmd, "mid", 2) == 0) {
-      set_agc_mode(AGC_MID);
-    } else if (strncmp(cmd, "fast", 2) == 0) {
-      set_agc_mode(AGC_FAST);
-    } else if (strncmp(cmd, "di", 2) == 0) {
-      tlv320aic3204_agc_config(NULL);
-    } else if (strncmp(cmd, "enable", 2) == 0) {
-      tlv320aic3204_agc_config(&config.agc);
-    } else if (strncmp(cmd, "le", 2) == 0 && argc == 2) {
-      config.agc.target_level = atoi(argv[1]);
-      tlv320aic3204_agc_config(&config.agc);
-    } else if (strncmp(cmd, "hy", 2) == 0 && argc == 2) {
-      config.agc.gain_hysteresis = atoi(argv[1]);
-      tlv320aic3204_agc_config(&config.agc);
-    } else if (strncmp(cmd, "at", 2) == 0 && argc >= 2) {
-      config.agc.attack = atoi(argv[1]);
-      if (argc >= 3)
-        config.agc.attack_scale = atoi(argv[2]);
-      tlv320aic3204_agc_config(&config.agc);
-    } else if (strncmp(cmd, "de", 2) == 0 && argc >= 2) {
-      config.agc.decay = atoi(argv[1]);
-      if (argc >= 3)
-        config.agc.decay_scale = atoi(argv[2]);
-      tlv320aic3204_agc_config(&config.agc);
-    } else if (strncmp(cmd, "max", 3) == 0 && argc >= 2) {
-      config.agc.maximum_gain = atoi(argv[1]);
-      tlv320aic3204_agc_config(&config.agc);
-    }
+  cmd = argv[0];
+  if (strncmp(cmd, "manual", 3) == 0) {
+    set_agc_mode(AGC_MANUAL);
+  } else if (strncmp(cmd, "slow", 2) == 0) {
+    set_agc_mode(AGC_SLOW);
+  } else if (strncmp(cmd, "mid", 2) == 0) {
+    set_agc_mode(AGC_MID);
+  } else if (strncmp(cmd, "fast", 2) == 0) {
+    set_agc_mode(AGC_FAST);
+  } else if (strncmp(cmd, "di", 2) == 0) {
+    tlv320aic3204_agc_config(NULL);
+  } else if (strncmp(cmd, "enable", 2) == 0) {
+    tlv320aic3204_agc_config(&config.agc);
+  } else if (strncmp(cmd, "le", 2) == 0 && argc == 2) {
+    config.agc.target_level = atoi(argv[1]);
+    tlv320aic3204_agc_config(&config.agc);
+  } else if (strncmp(cmd, "hy", 2) == 0 && argc == 2) {
+    config.agc.gain_hysteresis = atoi(argv[1]);
+    tlv320aic3204_agc_config(&config.agc);
+  } else if (strncmp(cmd, "at", 2) == 0 && argc >= 2) {
+    config.agc.attack = atoi(argv[1]);
+    if (argc >= 3)
+      config.agc.attack_scale = atoi(argv[2]);
+    tlv320aic3204_agc_config(&config.agc);
+  } else if (strncmp(cmd, "de", 2) == 0 && argc >= 2) {
+    config.agc.decay = atoi(argv[1]);
+    if (argc >= 3)
+      config.agc.decay_scale = atoi(argv[2]);
+    tlv320aic3204_agc_config(&config.agc);
+  } else if (strncmp(cmd, "max", 3) == 0 && argc >= 2) {
+    config.agc.maximum_gain = atoi(argv[1]);
+    tlv320aic3204_agc_config(&config.agc);
+  }
 }
 
-void set_agc_mode(int mode)
+void
+set_agc_mode(int mode)
 {
   if (mode == AGC_MANUAL) {
     tlv320aic3204_agc_config(NULL);
@@ -636,68 +672,71 @@ void set_agc_mode(int mode)
     return;
   }
   switch (mode) {
-  case AGC_FAST:
-    config.agc.decay = 0;
-    config.agc.decay_scale = 0;
-    break;
-  case AGC_MID:
-    config.agc.decay = 7;
-    config.agc.decay_scale = 0;
-    break;
-  case AGC_SLOW:
-    config.agc.decay = 31;
-    config.agc.decay_scale = 4;
-    break;
+    case AGC_FAST:
+      config.agc.decay = 0;
+      config.agc.decay_scale = 0;
+      break;
+    case AGC_MID:
+      config.agc.decay = 7;
+      config.agc.decay_scale = 0;
+      break;
+    case AGC_SLOW:
+      config.agc.decay = 31;
+      config.agc.decay_scale = 4;
+      break;
   }
   tlv320aic3204_agc_config(&config.agc);
   uistat.agcmode = mode;
   disp_update();
 }
 
-static void cmd_mode(BaseSequentialStream *chp, int argc, char *argv[])
+static void
+cmd_mode(BaseSequentialStream* chp, int argc, char* argv[])
 {
-    const char *cmd;
-    if (argc == 0) {
-      chprintf(chp, "usage: mode {lsb|usb|am|fm|fms}\r\n");
-      return;
-    }
+  const char* cmd;
+  if (argc == 0) {
+    chprintf(chp, "usage: mode {lsb|usb|am|fm|fms}\r\n");
+    return;
+  }
 
-    cmd = argv[0];
-    if (strncmp(cmd, "am", 1) == 0) {
-      set_modulation(MOD_AM);
-    } else if (strncmp(cmd, "lsb", 1) == 0) {
-      set_modulation(MOD_LSB);
-    } else if (strncmp(cmd, "usb", 1) == 0) {
-      set_modulation(MOD_USB);
-    } else if (strncmp(cmd, "cw", 1) == 0) {
-      set_modulation(MOD_CW);
-    } else if (strncmp(cmd, "fms", 3) == 0) {
-      set_modulation(MOD_FM_STEREO);
-    } else if (strncmp(cmd, "fm", 1) == 0) {
-      set_modulation(MOD_FM);
-    }
+  cmd = argv[0];
+  if (strncmp(cmd, "am", 1) == 0) {
+    set_modulation(MOD_AM);
+  } else if (strncmp(cmd, "lsb", 1) == 0) {
+    set_modulation(MOD_LSB);
+  } else if (strncmp(cmd, "usb", 1) == 0) {
+    set_modulation(MOD_USB);
+  } else if (strncmp(cmd, "cw", 1) == 0) {
+    set_modulation(MOD_CW);
+  } else if (strncmp(cmd, "fms", 3) == 0) {
+    set_modulation(MOD_FM_STEREO);
+  } else if (strncmp(cmd, "fm", 1) == 0) {
+    set_modulation(MOD_FM);
+  }
 }
 
-static void cmd_cwtone(BaseSequentialStream *chp, int argc, char *argv[])
+static void
+cmd_cwtone(BaseSequentialStream* chp, int argc, char* argv[])
 {
-    int freq = 0;
-    if (argc == 0) {
-        chprintf(chp, "%d\r\n", uistat.cw_tone_freq);
-        return;
-    }
+  int freq = 0;
+  if (argc == 0) {
+    chprintf(chp, "%d\r\n", uistat.cw_tone_freq);
+    return;
+  }
 
-    if (argc == 1)
-        freq = atoi(argv[0]);
+  if (argc == 1)
+    freq = atoi(argv[0]);
 
-    if (freq == 0) {
-        chprintf(chp, "usage: cwtone {audio frequency(Hz)}\r\n");
-        return;
-    }
-    uistat.cw_tone_freq = freq;
-    update_cwtone();
+  if (freq == 0) {
+    chprintf(chp, "usage: cwtone {audio frequency(Hz)}\r\n");
+    return;
+  }
+  uistat.cw_tone_freq = freq;
+  update_cwtone();
 }
 
-static void cmd_fs(BaseSequentialStream *chp, int argc, char *argv[])
+static void
+cmd_fs(BaseSequentialStream* chp, int argc, char* argv[])
 {
   int fs = 0;
 
@@ -713,19 +752,21 @@ static void cmd_fs(BaseSequentialStream *chp, int argc, char *argv[])
   }
 }
 
-static void cmd_winfunc(BaseSequentialStream *chp, int argc, char *argv[])
+static void
+cmd_winfunc(BaseSequentialStream* chp, int argc, char* argv[])
 {
-    int type;
-    if (argc == 0) {
-      chprintf(chp, "usage: winfunc {0|1|2}\r\n");
-      return;
-    }
+  int type;
+  if (argc == 0) {
+    chprintf(chp, "usage: winfunc {0|1|2}\r\n");
+    return;
+  }
 
-    type = atoi(argv[0]);
-    set_window_function(type);
+  type = atoi(argv[0]);
+  set_window_function(type);
 }
 
-static void cmd_show(BaseSequentialStream *chp, int argc, char *argv[])
+static void
+cmd_show(BaseSequentialStream* chp, int argc, char* argv[])
 {
   if (argc == 0 || strcmp(argv[0], "all") == 0) {
     chprintf(chp, "tune: %d\r\n", uistat.freq);
@@ -752,7 +793,8 @@ static void cmd_show(BaseSequentialStream *chp, int argc, char *argv[])
   }
 }
 
-static void cmd_channel(BaseSequentialStream *chp, int argc, char *argv[])
+static void
+cmd_channel(BaseSequentialStream* chp, int argc, char* argv[])
 {
   if (argc == 0) {
     chprintf(chp, "usage: channel [save|list] [n(0-99)]\r\n");
@@ -776,9 +818,11 @@ static void cmd_channel(BaseSequentialStream *chp, int argc, char *argv[])
   } else if (strncmp(argv[0], "list", 1) == 0) {
     for (channel = 0; channel < CHANNEL_MAX; channel++) {
       if (config.channels[channel].freq) {
-        chprintf(chp, "%d %d %s\r\n", channel,
-                config.channels[channel].freq,
-                mod_table[config.channels[channel].modulation].name);
+        chprintf(chp,
+                 "%d %d %s\r\n",
+                 channel,
+                 config.channels[channel].freq,
+                 mod_table[config.channels[channel].modulation].name);
       }
     }
   } else {
@@ -794,7 +838,8 @@ static void cmd_channel(BaseSequentialStream *chp, int argc, char *argv[])
   }
 }
 
-static void cmd_revision(BaseSequentialStream *chp, int argc, char *argv[])
+static void
+cmd_revision(BaseSequentialStream* chp, int argc, char* argv[])
 {
   if (argc == 0) {
     chprintf(chp, "usage: revision {rev}\r\n");
@@ -802,21 +847,22 @@ static void cmd_revision(BaseSequentialStream *chp, int argc, char *argv[])
   }
   int rev = atoi(argv[0]);
   switch (rev) {
-  case 0:
-    config.freq_inverse = 1;
-    config.button_polarity = 0x00;
-    break;
-  case 1:
-    config.freq_inverse = -1;
-    config.button_polarity = 0x01;
-    break;
-  default:
-    chprintf(chp, "unknown revision\r\n");
-    break;
+    case 0:
+      config.freq_inverse = 1;
+      config.button_polarity = 0x00;
+      break;
+    case 1:
+      config.freq_inverse = -1;
+      config.button_polarity = 0x01;
+      break;
+    default:
+      chprintf(chp, "unknown revision\r\n");
+      break;
   }
 }
 
-static void cmd_save(BaseSequentialStream *chp, int argc, char *argv[])
+static void
+cmd_save(BaseSequentialStream* chp, int argc, char* argv[])
 {
   (void)argc;
   (void)argv;
@@ -827,7 +873,8 @@ static void cmd_save(BaseSequentialStream *chp, int argc, char *argv[])
   chprintf(chp, "Config saved.\r\n");
 }
 
-static void cmd_clearconfig(BaseSequentialStream *chp, int argc, char *argv[])
+static void
+cmd_clearconfig(BaseSequentialStream* chp, int argc, char* argv[])
 {
   if (argc != 1) {
     chprintf(chp, "usage: clearconfig {protection key}\r\n");
@@ -843,23 +890,25 @@ static void cmd_clearconfig(BaseSequentialStream *chp, int argc, char *argv[])
   chprintf(chp, "Config and all cal data cleared.\r\n");
 }
 
-static void cmd_uitest(BaseSequentialStream *chp, int argc, char *argv[])
+static void
+cmd_uitest(BaseSequentialStream* chp, int argc, char* argv[])
 {
   (void)argc;
   (void)argv;
   int i;
   for (i = 0; i < 100; i++) {
-    //extern int btn_check(void);
-    //int n = btn_check();
-    //extern int read_buttons(void);
-    //int n = read_buttons();
+    // extern int btn_check(void);
+    // int n = btn_check();
+    // extern int read_buttons(void);
+    // int n = read_buttons();
     extern int enc_count;
     chprintf(chp, "%d\r\n", enc_count);
     chThdSleepMilliseconds(100);
   }
 }
 
-static void cmd_lcd(BaseSequentialStream *chp, int argc, char *argv[])
+static void
+cmd_lcd(BaseSequentialStream* chp, int argc, char* argv[])
 {
   if (argc != 1) {
     chprintf(chp, "usage: lcd {rotate 180}\r\n");
@@ -873,72 +922,65 @@ static void cmd_lcd(BaseSequentialStream *chp, int argc, char *argv[])
 
 static const ShellCommand commands[] =
 {
-    { "reset", cmd_reset },
-    { "freq", cmd_freq },
-    { "tune", cmd_tune },
-    { "dac", cmd_dac },
-    { "uitest", cmd_uitest },
-    { "tone", cmd_tone },
-    { "cwtone", cmd_cwtone },
-    { "data", cmd_data },
-    { "stat", cmd_stat },
-    { "gain", cmd_gain },
-    { "volume", cmd_volume },
-    { "agc", cmd_agc },
-    { "iqbal", cmd_iqbal },
-    { "dcreject", cmd_dcreject },
-    { "imp", cmd_impedance },
-    { "mode", cmd_mode },
-    { "fs", cmd_fs },
-    { "winfunc", cmd_winfunc },
-    { "show", cmd_show },
-    { "power", cmd_power },
-    { "channel", cmd_channel },
-    { "revision", cmd_revision },
-    { "save", cmd_save },
-    { "clearconfig", cmd_clearconfig },
-    { "phase", cmd_phase },
-    { "finegain", cmd_finegain },
-    { "lcd", cmd_lcd },
-    { NULL, NULL }
+  { "reset", cmd_reset },
+  { "freq", cmd_freq },
+  { "tune", cmd_tune },
+  { "dac", cmd_dac },
+  { "uitest", cmd_uitest },
+  { "tone", cmd_tone },
+  { "cwtone", cmd_cwtone },
+  { "data", cmd_data },
+  { "stat", cmd_stat },
+  { "gain", cmd_gain },
+  { "volume", cmd_volume },
+  { "agc", cmd_agc },
+  { "iqbal", cmd_iqbal },
+  { "dcreject", cmd_dcreject },
+  { "imp", cmd_impedance },
+  { "mode", cmd_mode },
+  { "fs", cmd_fs },
+  { "winfunc", cmd_winfunc },
+  { "show", cmd_show },
+  { "power", cmd_power },
+  { "channel", cmd_channel },
+  { "revision", cmd_revision },
+  { "save", cmd_save },
+  { "clearconfig", cmd_clearconfig },
+  { "phase", cmd_phase },
+  { "finegain", cmd_finegain },
+  { "lcd", cmd_lcd },
+  { NULL, NULL }
 };
 
 static THD_WORKING_AREA(waThread2, 512);
 static __attribute__((noreturn)) THD_FUNCTION(Thread2, arg)
 {
-    (void)arg;
-    chRegSetThreadName("button");
-    while (1)
-    {
-      disp_process();
-      ui_process();
-      chThdSleepMilliseconds(10);
-      stat.fps_count++;
+  (void)arg;
+  chRegSetThreadName("button");
+  while (1) {
+    disp_process();
+    ui_process();
+    chThdSleepMilliseconds(10);
+    stat.fps_count++;
 
-      {
-        int flag = tlv320aic3204_get_sticky_flag_register();
-        if (flag & AIC3204_STICKY_ADC_OVERFLOW)
-          stat.overflow_count++;
-      }
+    {
+      int flag = tlv320aic3204_get_sticky_flag_register();
+      if (flag & AIC3204_STICKY_ADC_OVERFLOW)
+        stat.overflow_count++;
     }
+  }
 }
 
-
 static DACConfig dac1cfg1 = {
-  //init:         2047U,
-  init:         1080U,
-  datamode:     DAC_DHRM_12BIT_RIGHT
+  // init:         2047U,
+  init : 1080U,
+  datamode : DAC_DHRM_12BIT_RIGHT
 };
-
 
 #define SHELL_WA_SIZE THD_WORKING_AREA_SIZE(2048)
 
-static const ShellConfig shell_cfg1 =
-{
-    (BaseSequentialStream *)&SDU1,
-    commands
-};
-
+static const ShellConfig shell_cfg1 = { (BaseSequentialStream*)&SDU1,
+                                        commands };
 
 /*
  * Application entry point.
@@ -995,7 +1037,7 @@ int __attribute__((noreturn)) main(void)
    * after a reset.
    */
   usbDisconnectBus(serusbcfg.usbp);
-  //chThdSleepMilliseconds(200);
+  // chThdSleepMilliseconds(200);
   usbStart(serusbcfg.usbp, &usbcfg);
   usbConnectBus(serusbcfg.usbp);
 
@@ -1017,8 +1059,8 @@ int __attribute__((noreturn)) main(void)
    * SPI LCD Initialize
    */
   ili9341_init();
-  //ili9341_test(4);
-  //ili9341_test(3);
+  // ili9341_test(4);
+  // ili9341_test(3);
 
 #if 1
   /*
@@ -1043,8 +1085,8 @@ int __attribute__((noreturn)) main(void)
 
   update_iqbal();
   update_agc();
-  //tlv320aic3204_config_adc_filter2(config.freq_inverse /* + 0.129 */); // enable DC reject
-  //tlv320aic3204_config_adc_filter(1); // enable DC reject
+  // tlv320aic3204_config_adc_filter2(config.freq_inverse /* + 0.129 */); //
+  // enable DC reject tlv320aic3204_config_adc_filter(1); // enable DC reject
 
   /*
    * Creates the button thread.
@@ -1056,10 +1098,13 @@ int __attribute__((noreturn)) main(void)
    */
   while (true) {
     if (SDU1.config->usbp->state == USB_ACTIVE) {
-      thread_t *shelltp = chThdCreateFromHeap(NULL, SHELL_WA_SIZE,
-                                              "shell", NORMALPRIO + 1,
-                                              shellThread, (void *)&shell_cfg1);
-      chThdWait(shelltp);               /* Waiting termination.             */
+      thread_t* shelltp = chThdCreateFromHeap(NULL,
+                                              SHELL_WA_SIZE,
+                                              "shell",
+                                              NORMALPRIO + 1,
+                                              shellThread,
+                                              (void*)&shell_cfg1);
+      chThdWait(shelltp); /* Waiting termination.             */
     }
     chThdSleepMilliseconds(1000);
   }

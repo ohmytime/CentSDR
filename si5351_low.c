@@ -27,47 +27,48 @@ rcc_gpio_init(void)
 static void
 i2c_init(I2C_TypeDef* i2c)
 {
-	// Disable the I2Cx peripheral
-	i2c->CR1 &= ~I2C_CR1_PE;
-	while (i2c->CR1 & I2C_CR1_PE);
+  // Disable the I2Cx peripheral
+  i2c->CR1 &= ~I2C_CR1_PE;
+  while (i2c->CR1 & I2C_CR1_PE)
+    ;
 
   // 100kHz @ 8MHz
   i2c->TIMINGR = 0x10420F13;
 
-	// Use 7-bit addresses
-	i2c->CR2 &=~ I2C_CR2_ADD10;
+  // Use 7-bit addresses
+  i2c->CR2 &= ~I2C_CR2_ADD10;
 
-	// Enable the analog filter
-	i2c->CR1 &= ~I2C_CR1_ANFOFF;
+  // Enable the analog filter
+  i2c->CR1 &= ~I2C_CR1_ANFOFF;
 
-	// Disable NOSTRETCH
-	i2c->CR1 |= I2C_CR1_NOSTRETCH;
+  // Disable NOSTRETCH
+  i2c->CR1 |= I2C_CR1_NOSTRETCH;
 
-	// Enable I2Cx peripheral clock.
-	// Select APB1 as clock source
-	if (i2c == I2C1) {
-		RCC->APB1ENR |= RCC_APB1ENR_I2C1EN;
-	} else if (i2c == I2C2) {
-		RCC->APB1ENR |= RCC_APB1ENR_I2C2EN;
-	}
+  // Enable I2Cx peripheral clock.
+  // Select APB1 as clock source
+  if (i2c == I2C1) {
+    RCC->APB1ENR |= RCC_APB1ENR_I2C1EN;
+  } else if (i2c == I2C2) {
+    RCC->APB1ENR |= RCC_APB1ENR_I2C2EN;
+  }
 
-	// Enable the I2Cx peripheral
-	i2c->CR1 |= I2C_CR1_PE;
+  // Enable the I2Cx peripheral
+  i2c->CR1 |= I2C_CR1_PE;
 }
 
 static void
 i2cSendByte(I2C_TypeDef* i2c, uint8_t addr, const uint8_t *buf, uint8_t len)
 {
-	i2c->CR2 = (I2C_CR2_SADD & addr) 	// Set the slave address
-      | (I2C_CR2_NBYTES & (len << 16))	// Send one byte
-      | I2C_CR2_START 					// Generate start condition
-      | I2C_CR2_AUTOEND;				// Generate stop condition after sent
+  i2c->CR2 = (I2C_CR2_SADD & addr)            // Set the slave address
+                   | (I2C_CR2_NBYTES & (len << 16)) // Send one byte
+                   | I2C_CR2_START                  // Generate start condition
+                   | I2C_CR2_AUTOEND; // Generate stop condition after sent
 
-	// Send the data
-    while (len-- > 0) {
-      while (!(i2c->ISR & I2C_ISR_TXIS));
-      i2c->TXDR = (I2C_TXDR_TXDATA & *buf++);
-    }
+  // Send the data
+  while (len-- > 0) {
+    while (!(i2c->ISR & I2C_ISR_TXIS));
+    i2c->TXDR = (I2C_TXDR_TXDATA & *buf++);
+  }
 }
 
 // register addr, length, data, ...
@@ -90,7 +91,7 @@ const uint8_t si5351_configs[] = {
 void
 si5351_init_bulk(void)
 {
-  const uint8_t *p = si5351_configs;
+  const uint8_t* p = si5351_configs;
   while (*p) {
     uint8_t len = *p++;
     i2cSendByte(I2C1, SI5351_I2C_ADDR, p, len);

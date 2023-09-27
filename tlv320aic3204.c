@@ -17,7 +17,7 @@ tlv320aic3204_write(uint8_t reg, uint8_t dat)
 }
 
 static void
-tlv320aic3204_bulk_write(const uint8_t *buf, int len)
+tlv320aic3204_bulk_write(const uint8_t* buf, int len)
 {
   int addr = AIC3204_ADDR;
   i2cAcquireBus(&I2CD1);
@@ -36,11 +36,10 @@ tlv320aic3204_read(uint8_t d0)
   return buf[0];
 }
 
-
 static void
-tlv320aic3204_config(const uint8_t *data)
+tlv320aic3204_config(const uint8_t* data)
 {
-  const uint8_t *p = data;
+  const uint8_t* p = data;
   while (*p) {
     uint8_t len = *p++;
     tlv320aic3204_bulk_write(p, len);

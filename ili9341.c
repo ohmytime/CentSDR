@@ -90,14 +90,11 @@ spi_init(void)
 {
   rccEnableSPI1(FALSE);
 
-  dmatx     = STM32_DMA_STREAM(STM32_SPI_SPI1_TX_DMA_STREAM);
+  dmatx = STM32_DMA_STREAM(STM32_SPI_SPI1_TX_DMA_STREAM);
   txdmamode = STM32_DMA_CR_CHSEL(SPI1_TX_DMA_CHANNEL) |
-    STM32_DMA_CR_PL(STM32_SPI_SPI1_DMA_PRIORITY) |
-    STM32_DMA_CR_DIR_M2P |
-    STM32_DMA_CR_DMEIE |
-    STM32_DMA_CR_TEIE |
-    STM32_DMA_CR_PSIZE_HWORD |
-    STM32_DMA_CR_MSIZE_HWORD;
+              STM32_DMA_CR_PL(STM32_SPI_SPI1_DMA_PRIORITY) |
+              STM32_DMA_CR_DIR_M2P | STM32_DMA_CR_DMEIE | STM32_DMA_CR_TEIE |
+              STM32_DMA_CR_PSIZE_HWORD | STM32_DMA_CR_MSIZE_HWORD;
   dmaStreamAllocate(dmatx,
                     STM32_SPI_SPI1_IRQ_PRIORITY,
                     (stm32_dmaisr_t)spi_lld_serve_tx_interrupt,
@@ -105,23 +102,23 @@ spi_init(void)
   dmaStreamSetPeripheral(dmatx, &SPI1->DR);
 
   SPI1->CR1 = 0;
-  SPI1->CR1 = SPI_CR1_MSTR | SPI_CR1_SSM | SPI_CR1_SSI;// | SPI_CR1_BR_1;
+  SPI1->CR1 = SPI_CR1_MSTR | SPI_CR1_SSM | SPI_CR1_SSI; // | SPI_CR1_BR_1;
   SPI1->CR2 = 0x0700 | SPI_CR2_TXDMAEN;
   SPI1->CR1 |= SPI_CR1_SPE;
 }
 
 void
-send_command(uint8_t cmd, int len, const uint8_t *data)
+send_command(uint8_t cmd, int len, const uint8_t* data)
 {
-	CS_LOW;
-	DC_CMD;
+  CS_LOW;
+  DC_CMD;
   ssp_databit8();
-	ssp_senddata(cmd);
-	DC_DATA;
-	while (len-- > 0) {
+  ssp_senddata(cmd);
+  DC_DATA;
+  while (len-- > 0) {
     ssp_senddata(*data++);
-	}
-	// CS_HIGH;
+  }
+  // CS_HIGH;
 }
 
 const uint8_t
@@ -269,7 +266,7 @@ ili9341_drawchar_5x7(uint8_t ch, int x, int y, uint16_t fg, uint16_t bg)
 }
 
 void
-ili9341_drawstring_5x7(const char *str, int x, int y, uint16_t fg, uint16_t bg)
+ili9341_drawstring_5x7(const char* str, int x, int y, uint16_t fg, uint16_t bg)
 {
   while (*str) {
     ili9341_drawchar_5x7(*str, x, y, fg, bg);
@@ -286,30 +283,40 @@ const font_t NF32x48 = { 32, 48, 2, 24, 1, (const uint32_t *)numfont32x24 };
 const font_t ICON48x20 = { 48, 20, 1, 40, 2, (const uint32_t *)icons48x20 };
 
 void
-ili9341_drawfont(uint8_t ch, const font_t *font, int x, int y, uint16_t fg, uint16_t bg)
+ili9341_drawfont(uint8_t ch,
+                 const font_t* font,
+                 int x,
+                 int y,
+                 uint16_t fg,
+                 uint16_t bg)
 {
-	uint16_t *buf = spi_buffer;
-	uint32_t bits;
-	const uint32_t *bitmap = &font->bitmap[font->slide * ch];
-	int c, r, j, b;
+  uint16_t* buf = spi_buffer;
+  uint32_t bits;
+  const uint32_t* bitmap = &font->bitmap[font->slide * ch];
+  int c, r, j, b;
 
-	for (c = 0; c < font->slide; c += font->stride) {
-		for (j = 0; j < font->scaley; j++) {
-			int cc = c;
-			for (r = 0; r < font->width;) {
-				bits = bitmap[cc++];
-				for (b = 0; b < 32 && r < font->width; b++,r++) {
-					*buf++ = (0x80000000UL & bits) ? fg : bg;
-					bits <<= 1;
-				}
-			}
-		}
-	}
-    ili9341_draw_bitmap(x, y, font->width, font->height, spi_buffer);
+  for (c = 0; c < font->slide; c += font->stride) {
+    for (j = 0; j < font->scaley; j++) {
+      int cc = c;
+      for (r = 0; r < font->width;) {
+        bits = bitmap[cc++];
+        for (b = 0; b < 32 && r < font->width; b++, r++) {
+          *buf++ = (0x80000000UL & bits) ? fg : bg;
+          bits <<= 1;
+        }
+      }
+    }
+  }
+  ili9341_draw_bitmap(x, y, font->width, font->height, spi_buffer);
 }
 
 void
-ili9341_drawfont_string(const char *str, const font_t *font, int x, int y, uint16_t fg, uint16_t bg)
+ili9341_drawfont_string(const char* str,
+                        const font_t* font,
+                        int x,
+                        int y,
+                        uint16_t fg,
+                        uint16_t bg)
 {
   while (*str) {
     char c = *str++;

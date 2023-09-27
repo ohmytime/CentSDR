@@ -6,7 +6,7 @@
 static void
 si5351_write(uint8_t reg, uint8_t dat)
 {
-  int addr = SI5351_I2C_ADDR>>1;
+  int addr = SI5351_I2C_ADDR >> 1;
   uint8_t buf[] = { reg, dat };
   i2cAcquireBus(&I2CD1);
   (void)i2cMasterTransmitTimeout(&I2CD1, addr, buf, 2, NULL, 0, 1000);
@@ -14,9 +14,9 @@ si5351_write(uint8_t reg, uint8_t dat)
 }
 
 static void
-si5351_bulk_write(const uint8_t *buf, int len)
+si5351_bulk_write(const uint8_t* buf, int len)
 {
-  int addr = SI5351_I2C_ADDR>>1;
+  int addr = SI5351_I2C_ADDR >> 1;
   i2cAcquireBus(&I2CD1);
   (void)i2cMasterTransmitTimeout(&I2CD1, addr, buf, len, NULL, 0, 1000);
   i2cReleaseBus(&I2CD1);
@@ -48,16 +48,14 @@ si5351_reset_pll(void)
   si5351_write(SI5351_REG_177_PLL_RESET, 0xAC);
 }
 
-void si5351_setupPLL(uint8_t pll, /* SI5351_PLL_A or SI5351_PLL_B */
-                     uint8_t     mult,
-                     uint32_t    num,
-                     uint32_t    denom)
+void
+si5351_setupPLL(uint8_t pll, /* SI5351_PLL_A or SI5351_PLL_B */
+                uint8_t mult,
+                uint32_t num,
+                uint32_t denom)
 {
   /* Get the appropriate starting point for the PLL registers */
-  const uint8_t pllreg_base[] = {
-    SI5351_REG_26_PLL_A,
-    SI5351_REG_34_PLL_B
-  };
+  const uint8_t pllreg_base[] = { SI5351_REG_26_PLL_A, SI5351_REG_34_PLL_B };
   uint32_t P1;
   uint32_t P2;
   uint32_t P3;
@@ -73,19 +71,18 @@ void si5351_setupPLL(uint8_t pll, /* SI5351_PLL_A or SI5351_PLL_B */
    */
 
   /* Set the main PLL config registers */
-  if (num == 0)
-  {
+  if (num == 0) {
     /* Integer mode */
     P1 = 128 * mult - 512;
     P2 = 0;
     P3 = 1;
-  }
-  else
-  {
+  } else {
     /* Fractional mode */
-    // P1 = (uint32_t)(128 * mult + floor(128 * ((float)num/(float)denom)) - 512);
+    // P1 = (uint32_t)(128 * mult + floor(128 * ((float)num/(float)denom)) -
+    // 512);
     P1 = 128 * mult + ((128 * num) / denom) - 512;
-    // P2 = (uint32_t)(128 * num - denom * floor(128 * ((float)num/(float)denom)));
+    // P2 = (uint32_t)(128 * num - denom * floor(128 *
+    // ((float)num/(float)denom)));
     P2 = 128 * num - denom * ((128 * num) / denom);
     P3 = denom;
   }
@@ -105,13 +102,13 @@ void si5351_setupPLL(uint8_t pll, /* SI5351_PLL_A or SI5351_PLL_B */
 }
 
 void
-si5351_setupMultisynth(uint8_t     output,
-                       uint8_t	   pllSource,
-                       uint32_t    div, // 4,6,8, 8+ ~ 900
-                       uint32_t    num,
-                       uint32_t    denom,
-                       uint32_t    rdiv, // SI5351_R_DIV_1~128
-                       uint8_t     drive_strength)
+si5351_setupMultisynth(uint8_t output,
+                       uint8_t pllSource,
+                       uint32_t div, // 4,6,8, 8+ ~ 900
+                       uint32_t num,
+                       uint32_t denom,
+                       uint32_t rdiv, // SI5351_R_DIV_1~128
+                       uint8_t drive_strength)
 {
   /* Get the appropriate starting point for the PLL registers */
   const uint8_t msreg_base[] = {
@@ -119,11 +116,9 @@ si5351_setupMultisynth(uint8_t     output,
     SI5351_REG_50_MULTISYNTH1,
     SI5351_REG_58_MULTISYNTH2,
   };
-  const uint8_t clkctrl[] = {
-    SI5351_REG_16_CLK0_CONTROL,
-    SI5351_REG_17_CLK1_CONTROL,
-    SI5351_REG_18_CLK2_CONTROL
-  };
+  const uint8_t clkctrl[] = { SI5351_REG_16_CLK0_CONTROL,
+                              SI5351_REG_17_CLK1_CONTROL,
+                              SI5351_REG_18_CLK2_CONTROL };
   uint8_t dat;
 
   uint32_t P1;
@@ -268,31 +263,31 @@ si5351_set_frequency(int freq)
 #endif
 
   switch (band) {
-  case 0:
-    if (rdiv == SI5351_R_DIV_8) {
-      freq *= 8;
-    } else if (rdiv == SI5351_R_DIV_64) {
-      freq *= 64;
-    }
+    case 0:
+      if (rdiv == SI5351_R_DIV_8) {
+        freq *= 8;
+      } else if (rdiv == SI5351_R_DIV_64) {
+        freq *= 64;
+      }
 
-    si5351_set_frequency_fixedpll(1, SI5351_PLL_A, PLLFREQ, freq,
-                                  rdiv, drive_strength);
-    break;
+      si5351_set_frequency_fixedpll(
+        1, SI5351_PLL_A, PLLFREQ, freq, rdiv, drive_strength);
+      break;
 
-  case 1:
-    // Set PLL twice on changing from band 2
-    if (current_band == 2) {
+    case 1:
+      // Set PLL twice on changing from band 2
+      if (current_band == 2) {
+        si5351_set_frequency_fixeddiv(1, SI5351_PLL_B, freq, 6, drive_strength);
+      }
+
+      // div by 6 mode. both PLL A and B are dedicated for CLK0, CLK1
       si5351_set_frequency_fixeddiv(1, SI5351_PLL_B, freq, 6, drive_strength);
-    }
+      break;
 
-    // div by 6 mode. both PLL A and B are dedicated for CLK0, CLK1
-    si5351_set_frequency_fixeddiv(1, SI5351_PLL_B, freq, 6, drive_strength);
-    break;
-
-  case 2:
-    // div by 4 mode. both PLL A and B are dedicated for CLK0, CLK1
-    si5351_set_frequency_fixeddiv(1, SI5351_PLL_B, freq, 4, drive_strength);
-    break;
+    case 2:
+      // div by 4 mode. both PLL A and B are dedicated for CLK0, CLK1
+      si5351_set_frequency_fixeddiv(1, SI5351_PLL_B, freq, 4, drive_strength);
+      break;
   }
 
   if (current_band != band) {
@@ -302,5 +297,3 @@ si5351_set_frequency(int freq)
 
   current_band = band;
 }
-
-

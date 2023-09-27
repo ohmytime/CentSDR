@@ -11,50 +11,50 @@
 uint16_t
 log2_q31(uint32_t x)
 {
-	uint32_t mask = 0xffff0000;
-	uint16_t bit = 16;
-	uint16_t y = 32;//-15;
-	uint8_t i;
+  uint32_t mask = 0xffff0000;
+  uint16_t bit = 16;
+  uint16_t y = 32; //-15;
+  uint8_t i;
 
-	if (x == 0)
-		return 0;
-	// 16
-	if ((x & mask) == 0) {
-		x <<= bit;
-		y -= bit;
-	}
-	bit >>= 1;
-	mask <<= bit;
-	// 8
-	if ((x & mask) == 0) {
-		x <<= bit;
-		y -= bit;
-	}
-	bit >>= 1;
-	mask <<= bit;
-	// 4
-	if ((x & mask) == 0) {
-		x <<= bit;
-		y -= bit;
-	}
-	bit >>= 1;
-	mask <<= bit;
-	// 2
-	if ((x & mask) == 0) {
-		x <<= bit;
-		y -= bit;
-	}
-	bit >>= 1;
-	mask <<= bit;
-	// 1
-	if ((x & mask) == 0) {
-		x <<= bit;
-		y -= bit;
-	}
-	// msb should be 1. take next 8 bits.
-	i = (x >> 23) & 0xff;
-	// lookup logarythm table
-	return (y << 8) | i;
+  if (x == 0)
+    return 0;
+  // 16
+  if ((x & mask) == 0) {
+    x <<= bit;
+    y -= bit;
+  }
+  bit >>= 1;
+  mask <<= bit;
+  // 8
+  if ((x & mask) == 0) {
+    x <<= bit;
+    y -= bit;
+  }
+  bit >>= 1;
+  mask <<= bit;
+  // 4
+  if ((x & mask) == 0) {
+    x <<= bit;
+    y -= bit;
+  }
+  bit >>= 1;
+  mask <<= bit;
+  // 2
+  if ((x & mask) == 0) {
+    x <<= bit;
+    y -= bit;
+  }
+  bit >>= 1;
+  mask <<= bit;
+  // 1
+  if ((x & mask) == 0) {
+    x <<= bit;
+    y -= bit;
+  }
+  // msb should be 1. take next 8 bits.
+  i = (x >> 23) & 0xff;
+  // lookup logarythm table
+  return (y << 8) | i;
 }
 
 static inline uint16_t
@@ -528,10 +528,9 @@ set_window_function(int wf_type)
 
 arm_cfft_radix4_instance_q31 cfft_inst;
 
-//#define mag(r,i) (q31_t)(((q63_t)r*r)>>33)+(q31_t)(((q63_t)i*i)>>33)
+// #define mag(r,i) (q31_t)(((q63_t)r*r)>>33)+(q31_t)(((q63_t)i*i)>>33)
 
 static int mag_shift = 0;
-
 
 #define BG_ACTIVE RGB565(15,10,10)
 #define BG_NORMAL 0x0000
@@ -539,21 +538,20 @@ static int mag_shift = 0;
 #define FG_ACTIVE RGB565(128,255,128)
 #define FG_NORMAL 0xffff
 
-
 uistat_t uistat;
 
+typedef struct
+{
+  uint32_t sample_freq;
+  int16_t offset;
+  int16_t stride;
+  int16_t overgain;
 
-typedef struct {
-	uint32_t sample_freq;
-	int16_t offset;
-	int16_t stride;
-	int16_t overgain;
-
-	int16_t origin;
-	int16_t tickstep;
-	int16_t tickbase;
-	int16_t tickunit;
-	const char *unitname;
+  int16_t origin;
+  int16_t tickstep;
+  int16_t tickbase;
+  int16_t tickunit;
+  const char* unitname;
 } spectrumdisplay_param_t;
 
 // 320pixel = 1024pt = 48kHz
@@ -580,10 +578,11 @@ const spectrumdisplay_param_t spdispparam_tbl_192khz[SPDISP_MODE_MAX] = {
 
 
 // when event sent with SEV from M4 core, filled following data
-typedef struct {
-	q31_t *buffer;
-	uint32_t buffer_rest;
-	uint8_t update_flag;
+typedef struct
+{
+  q31_t* buffer;
+  uint32_t buffer_rest;
+  uint8_t update_flag;
 } spectrumdisplay_t;
 
 // update_flag
@@ -592,9 +591,7 @@ typedef struct {
 #define FLAG_UI 		(1<<2)
 #define FLAG_AUX_INFO	(1<<3)
 
-
 spectrumdisplay_t spdispinfo;
-
 
 #define SPDISP_BUFFER_LENGTH 2048
 q31_t SPDISP_BUFFER[SPDISP_BUFFER_LENGTH];
@@ -602,8 +599,6 @@ q31_t SPDISP_BUFFER[SPDISP_BUFFER_LENGTH];
 q31_t *spdisp_fetch_current = SPDISP_BUFFER;
 int16_t spdisp_fetch_rest = 0;
 const int16_t *spdisp_wf_current = winfunc_blackmanharris;
-
-
 
 __attribute__( ( always_inline ) ) __STATIC_INLINE uint32_t __SMULBB(uint32_t op1, uint32_t op2)
 {
@@ -630,127 +625,130 @@ __attribute__( ( always_inline ) ) __STATIC_INLINE uint32_t __SMULBT(uint32_t op
   return(result);
 }
 
+// copy samples from 16bit into 32bit with applying window function
+inline static void
+window_complex_15to31(q15_t* s1, q15_t* s2, size_t length)
+{
+  q31_t* dest = spdisp_fetch_current;
+  const q15_t* wf = spdisp_wf_current;
+  spdisp_fetch_current += length * 2;
+  spdisp_fetch_rest -= length * 2;
+  spdisp_wf_current += length;
+
+  length /= 2;
+  while (length-- > 0) {
+    uint32_t w = *__SIMD32(wf)++;
+    uint32_t i1i2 = *__SIMD32(s1)++;
+    uint32_t q1q2 = *__SIMD32(s2)++;
+    *dest++ = __SMULBB(i1i2, w) << mag_shift;
+    *dest++ = __SMULBB(q1q2, w) << mag_shift;
+    *dest++ = __SMULTT(i1i2, w) << mag_shift;
+    *dest++ = __SMULTT(q1q2, w) << mag_shift;
+  }
+}
+
+inline static void
+window_real_15to31(q15_t* s1, size_t length)
+{
+  q31_t* dest = spdisp_fetch_current;
+  const q15_t* wf = spdisp_wf_current;
+  spdisp_fetch_current += length * 2;
+  spdisp_fetch_rest -= length * 2;
+  spdisp_wf_current += length;
+
+  length /= 2;
+  while (length-- > 0) {
+    uint32_t w = *__SIMD32(wf)++;
+    uint32_t i1i2 = *__SIMD32(s1)++;
+    *dest++ = __SMULBB(i1i2, w) << mag_shift;
+    *dest++ = 0;
+    *dest++ = __SMULTT(i1i2, w) << mag_shift;
+    *dest++ = 0;
+  }
+}
 
 // copy samples from 16bit into 32bit with applying window function
 inline static void
-window_complex_15to31(q15_t *s1, q15_t *s2, size_t length)
+window_complex_interleaved_15to31(q15_t* src, size_t length)
 {
-    q31_t *dest = spdisp_fetch_current;
-    const q15_t *wf = spdisp_wf_current;
-    spdisp_fetch_current += length * 2;
-	spdisp_fetch_rest -= length * 2;
-    spdisp_wf_current += length;
+  q31_t* dest = spdisp_fetch_current;
+  const q15_t* wf = spdisp_wf_current;
+  spdisp_fetch_current += length;
+  spdisp_fetch_rest -= length;
+  spdisp_wf_current += length / 2;
 
-	length /= 2;
-	while (length-- > 0) {
-		uint32_t w = *__SIMD32(wf)++;
-		uint32_t i1i2 = *__SIMD32(s1)++;
-		uint32_t q1q2 = *__SIMD32(s2)++;
-		*dest++ = __SMULBB(i1i2, w) << mag_shift;
-		*dest++ = __SMULBB(q1q2, w) << mag_shift;
-		*dest++ = __SMULTT(i1i2, w) << mag_shift;
-		*dest++ = __SMULTT(q1q2, w) << mag_shift;
-	}
+  length /= 4;
+  while (length-- > 0) {
+    uint32_t w = *__SIMD32(wf)++;
+    uint32_t i1q1 = *__SIMD32(src)++;
+    uint32_t i2q2 = *__SIMD32(src)++;
+    *dest++ = __SMULBB(i1q1, w) << mag_shift;
+    *dest++ = __SMULTB(i1q1, w) << mag_shift;
+    *dest++ = __SMULBT(i2q2, w) << mag_shift;
+    *dest++ = __SMULTT(i2q2, w) << mag_shift;
+  }
 }
 
 inline static void
-window_real_15to31(q15_t *s1, size_t length)
+window_real_interleaved_15to31(q15_t* src, size_t length)
 {
-    q31_t *dest = spdisp_fetch_current;
-    const q15_t *wf = spdisp_wf_current;
-    spdisp_fetch_current += length * 2;
-	spdisp_fetch_rest -= length * 2;
-    spdisp_wf_current += length;
+  // uint32_t offset = 0x08000800;
+  // uint32_t mask = 0xFFF0FFF0;
+  // uint16_t adj = spdisp_source[uistat.spdispmode].ibuf == CAPTUREBUFFER0;
+  q31_t* dest = spdisp_fetch_current;
+  const q15_t* wf = spdisp_wf_current;
+  spdisp_fetch_current += length;
+  spdisp_fetch_rest -= length;
+  spdisp_wf_current += length / 2;
 
-	length /= 2;
-	while (length-- > 0) {
-		uint32_t w = *__SIMD32(wf)++;
-		uint32_t i1i2 = *__SIMD32(s1)++;
-		*dest++ = __SMULBB(i1i2, w) << mag_shift;
-		*dest++ = 0;
-		*dest++ = __SMULTT(i1i2, w) << mag_shift;
-		*dest++ = 0;
-	}
-}
-
-// copy samples from 16bit into 32bit with applying window function
-inline static void
-window_complex_interleaved_15to31(q15_t *src, size_t length)
-{
-    q31_t *dest = spdisp_fetch_current;
-    const q15_t *wf = spdisp_wf_current;
-    spdisp_fetch_current += length;
-	spdisp_fetch_rest -= length;
-    spdisp_wf_current += length / 2;
-
-	length /= 4;
-	while (length-- > 0) {
-		uint32_t w = *__SIMD32(wf)++;
-		uint32_t i1q1 = *__SIMD32(src)++;
-		uint32_t i2q2 = *__SIMD32(src)++;
-		*dest++ = __SMULBB(i1q1, w) << mag_shift;
-		*dest++ = __SMULTB(i1q1, w) << mag_shift;
-		*dest++ = __SMULBT(i2q2, w) << mag_shift;
-		*dest++ = __SMULTT(i2q2, w) << mag_shift;
-	}
-}
-
-inline static void
-window_real_interleaved_15to31(q15_t *src, size_t length)
-{
-  //uint32_t offset = 0x08000800;
-  //uint32_t mask = 0xFFF0FFF0;
-  //uint16_t adj = spdisp_source[uistat.spdispmode].ibuf == CAPTUREBUFFER0;
-    q31_t *dest = spdisp_fetch_current;
-    const q15_t *wf = spdisp_wf_current;
-    spdisp_fetch_current += length;
-	spdisp_fetch_rest -= length;
-    spdisp_wf_current += length / 2;
-
-    length /= 4;
-	while (length-- > 0) {
-		uint32_t w = *__SIMD32(wf)++;
-		uint32_t i1q1 = *__SIMD32(src)++;
-		uint32_t i2q2 = *__SIMD32(src)++;
-		//if (adj)
-        //i1i2 = (__QSUB16(i1i2, offset) << 4) & mask;
-		*dest++ = __SMULBB(i1q1, w) << mag_shift;
-		*dest++ = 0;
-		*dest++ = __SMULBT(i2q2, w) << mag_shift;
-		*dest++ = 0;
-	}
+  length /= 4;
+  while (length-- > 0) {
+    uint32_t w = *__SIMD32(wf)++;
+    uint32_t i1q1 = *__SIMD32(src)++;
+    uint32_t i2q2 = *__SIMD32(src)++;
+    // if (adj)
+    // i1i2 = (__QSUB16(i1i2, offset) << 4) & mask;
+    *dest++ = __SMULBB(i1q1, w) << mag_shift;
+    *dest++ = 0;
+    *dest++ = __SMULBT(i2q2, w) << mag_shift;
+    *dest++ = 0;
+  }
 }
 
 // called from dsp.c
 void
-disp_fetch_samples(int mode, int type, int16_t *buf0, int16_t *buf1, size_t buflen)
+disp_fetch_samples(int mode,
+                   int type,
+                   int16_t* buf0,
+                   int16_t* buf1,
+                   size_t buflen)
 {
-    if (mode != uistat.spdispmode)
-        return;
+  if (mode != uistat.spdispmode)
+    return;
 
-	if (spdisp_fetch_rest == 0) {
-		if (spdispinfo.update_flag & FLAG_SPDISP) {
-			// currently proccessing in M0APP
-			return;
-		}
-        // start to fetch data
-		spdisp_fetch_current = SPDISP_BUFFER;
-		spdisp_fetch_rest = SPDISP_BUFFER_LENGTH;
-		spdisp_wf_current = winfunc_table;
-	}
-
-	size_t length = spdisp_fetch_rest;
-    if (type == BT_C_INTERLEAVE || type == BT_R_INTERLEAVE) {
-      if (buflen > length)
-        buflen = length;
-      length = buflen;
-    } else {
-      if (buflen > length / 2)
-        buflen = length / 2;
-      length = buflen * 2;
+  if (spdisp_fetch_rest == 0) {
+    if (spdispinfo.update_flag & FLAG_SPDISP) {
+      // currently proccessing in M0APP
+      return;
     }
+    // start to fetch data
+    spdisp_fetch_current = SPDISP_BUFFER;
+    spdisp_fetch_rest = SPDISP_BUFFER_LENGTH;
+    spdisp_wf_current = winfunc_table;
+  }
 
-	switch (type) {
+  size_t length = spdisp_fetch_rest;
+  if (type == BT_C_INTERLEAVE || type == BT_R_INTERLEAVE) {
+    if (buflen > length)
+      buflen = length;
+    length = buflen;
+  } else {
+    if (buflen > length / 2)
+      buflen = length / 2;
+    length = buflen * 2;
+  }
+
+  switch (type) {
     case BT_C_INTERLEAVE:
       window_complex_interleaved_15to31(buf0, buflen);
       break;
@@ -763,71 +761,72 @@ disp_fetch_samples(int mode, int type, int16_t *buf0, int16_t *buf1, size_t bufl
     case BT_R_INTERLEAVE:
       window_complex_interleaved_15to31(buf0, buflen);
       break;
-	}
+  }
 
-	if (spdisp_fetch_rest == 0) {
-        // filled up buffer, then analyze and draw waveform
-		spdispinfo.buffer = SPDISP_BUFFER;
-		spdispinfo.update_flag |= FLAG_SPDISP;
-	}
+  if (spdisp_fetch_rest == 0) {
+    // filled up buffer, then analyze and draw waveform
+    spdispinfo.buffer = SPDISP_BUFFER;
+    spdispinfo.update_flag |= FLAG_SPDISP;
+  }
 }
 
 // r:2048 c:1024 samples (8192 byte with q31_t)
 //#define SPDISP_BUFFER_SIZE	8192
 //static q31_t SPDISP_BUFFER[2048];
-
 void
 draw_spectrogram(void)
 {
-	q31_t *buf = spdispinfo.buffer;
-	arm_cfft_radix4_q31(&cfft_inst, buf);
+  q31_t* buf = spdispinfo.buffer;
+  arm_cfft_radix4_q31(&cfft_inst, buf);
 
-	//arm_cmplx_mag_q31(buf, buf, 1024);
-//	arm_cmplx_mag_squared_q31(buf, buf, 1024);
-	//draw_samples();
-	//return;
-	//uint16_t gainshift = spdispinfo.p.overgain;
-	uint16_t mode = uistat.spdispmode;
-    const spectrumdisplay_param_t *param = GET_SPDISP_PARAM(mode);
-	int i = param->offset;
-	int16_t stride = param->stride;
-    int16_t tune_pos = param->origin;
-    if (uistat.spdispmode == 0)
-      tune_pos += (int)mode_freq_offset*1024 / (48000 * stride);
-	uint16_t (*block)[32] = (uint16_t (*)[32])spi_buffer;
-	int sx, x, y;
-	for (sx = 0; sx < 320; sx += 32) {
-		for (x = 0; x < 32; x++) {
-          uint16_t bg = 0;
-          if (sx + x == tune_pos)
-            bg = RGB565(128, 255, 128);
-          int i0 = i;
-          int64_t acc = 0;
-          for (; i < i0 + stride; i++) {
-			q31_t ii = buf[(i&1023)*2];
-			q31_t qq = buf[(i&1023)*2+1];
-            acc += (int64_t)ii*ii + (int64_t)qq*qq;
-          }
-            //q31_t mag = acc>>(33-gainshift);
-			//q31_t mag = buf[i & 1023];
-			//int v = log2_q31(mag) >> 6;
-            // format of result of log function is 8.8 format
-            //int v = (log2_i64(acc) - (36<<8)) >> 6;
-          int v = (log2_i64(acc) - (36<<8)) / 77; // 1dB/pixel
-			if (v > 64) v = 64;
-			if (v < 0) v = 0;
-			for (y = 0; y < v; y++)
-				block[63-y][x] = 0xffff;
-			for ( ; y < 64; y++) {
-              block[63-y][x] = bg;
-              if (bg == 0 && y % 10 == 0)
-                // draw 10dB/ scale on background. 10dB/10pixel
-                block[63-y][x] = RGB565(15,15,15);
-            }
-			//i += stride;
-		}
-		ili9341_draw_bitmap(sx, 72, 32, 64, (uint16_t*)block);
-	}
+  // arm_cmplx_mag_q31(buf, buf, 1024);
+  // arm_cmplx_mag_squared_q31(buf, buf, 1024);
+  // draw_samples();
+  // return;
+  // uint16_t gainshift = spdispinfo.p.overgain;
+  uint16_t mode = uistat.spdispmode;
+  const spectrumdisplay_param_t* param = GET_SPDISP_PARAM(mode);
+  int i = param->offset;
+  int16_t stride = param->stride;
+  int16_t tune_pos = param->origin;
+  if (uistat.spdispmode == 0)
+    tune_pos += (int)mode_freq_offset * 1024 / (48000 * stride);
+  uint16_t(*block)[32] = (uint16_t(*)[32])spi_buffer;
+  int sx, x, y;
+  for (sx = 0; sx < 320; sx += 32) {
+    for (x = 0; x < 32; x++) {
+      uint16_t bg = 0;
+      if (sx + x == tune_pos)
+        bg = RGB565(128, 255, 128);
+      int i0 = i;
+      int64_t acc = 0;
+      for (; i < i0 + stride; i++) {
+        q31_t ii = buf[(i & 1023) * 2];
+        q31_t qq = buf[(i & 1023) * 2 + 1];
+        acc += (int64_t)ii * ii + (int64_t)qq * qq;
+      }
+      // q31_t mag = acc>>(33-gainshift);
+      // q31_t mag = buf[i & 1023];
+      // int v = log2_q31(mag) >> 6;
+      // format of result of log function is 8.8 format
+      // int v = (log2_i64(acc) - (36<<8)) >> 6;
+      int v = (log2_i64(acc) - (36 << 8)) / 77; // 1dB/pixel
+      if (v > 64)
+        v = 64;
+      if (v < 0)
+        v = 0;
+      for (y = 0; y < v; y++)
+        block[63 - y][x] = 0xffff;
+      for (; y < 64; y++) {
+        block[63 - y][x] = bg;
+        if (bg == 0 && y % 10 == 0)
+          // draw 10dB/ scale on background. 10dB/10pixel
+          block[63 - y][x] = RGB565(15, 15, 15);
+      }
+      // i += stride;
+    }
+    ili9341_draw_bitmap(sx, 72, 32, 64, (uint16_t*)block);
+  }
 }
 
 const struct { uint8_t r,g,b; } colormap[] = {
@@ -841,13 +840,13 @@ const struct { uint8_t r,g,b; } colormap[] = {
 uint16_t
 pick_color(int mag) /* mag: 0 - 63 */
 {
-	int idx = (mag >> 4) & 0x3;
-	int prop = mag & 0x0f;
-	int nprop = 0x10 - prop;
-	int r = colormap[idx].r * nprop + colormap[idx+1].r * prop;
-	int g = colormap[idx].g * nprop + colormap[idx+1].g * prop;
-	int b = colormap[idx].b * nprop + colormap[idx+1].b * prop;
-	return RGB565(r>>4, g>>4, b>>4);
+  int idx = (mag >> 4) & 0x3;
+  int prop = mag & 0x0f;
+  int nprop = 0x10 - prop;
+  int r = colormap[idx].r * nprop + colormap[idx + 1].r * prop;
+  int g = colormap[idx].g * nprop + colormap[idx + 1].g * prop;
+  int b = colormap[idx].b * nprop + colormap[idx + 1].b * prop;
+  return RGB565(r >> 4, g >> 4, b >> 4);
 }
 
 void
@@ -898,79 +897,87 @@ inrange(int v0, int v1, int y)
 void
 draw_waveform(void)
 {
-	q31_t *buf = spdispinfo.buffer;
-	uint16_t fg = uistat.mode == WFDISP ? FG_ACTIVE : FG_SCALE;
-	uint16_t bg = BG_NORMAL;
-    uint16_t c;
-	int x, y;
-    int xx;
-    int w;
-    int i;
+  q31_t* buf = spdispinfo.buffer;
+  uint16_t fg = uistat.mode == WFDISP ? FG_ACTIVE : FG_SCALE;
+  uint16_t bg = BG_NORMAL;
+  uint16_t c;
+  int x, y;
+  int xx;
+  int w;
+  int i;
 
-    if (uistat.wfdispmode == WATERFALL)
-      return;
+  if (uistat.wfdispmode == WATERFALL)
+    return;
 
-    if (uistat.wfdispmode == WAVEFORM_MAG2)
-      mag_shift = 6;
-    else if (uistat.wfdispmode == WAVEFORM_MAG)
-      mag_shift = 3;
-    else
-      mag_shift = 0;
+  if (uistat.wfdispmode == WAVEFORM_MAG2)
+    mag_shift = 6;
+  else if (uistat.wfdispmode == WAVEFORM_MAG)
+    mag_shift = 3;
+  else
+    mag_shift = 0;
 
-    int i0 = v2ypos(buf[(512-160)*2-2]);
-    int q0 = v2ypos(buf[(512-160)*2-1]);
-    int i1 = v2ypos(buf[(512-160)*2+0]);
-    int q1 = v2ypos(buf[(512-160)*2+1]);
+  int i0 = v2ypos(buf[(512 - 160) * 2 - 2]);
+  int q0 = v2ypos(buf[(512 - 160) * 2 - 1]);
+  int i1 = v2ypos(buf[(512 - 160) * 2 + 0]);
+  int q1 = v2ypos(buf[(512 - 160) * 2 + 1]);
 
-    xx = 0;
-	for (x = 0; x < 320; ) {
-      w = BLOCK_WIDTH;
-      if (w > (320 - x))
-        w = 320 - x; // adjust last section width
+  xx = 0;
+  for (x = 0; x < 320;) {
+    w = BLOCK_WIDTH;
+    if (w > (320 - x))
+      w = 320 - x; // adjust last section width
 
-      for (i = 0; i < w; i++) {
-        int i2 = v2ypos(buf[(512-160)*2+2 + x*2]);
-        int q2 = v2ypos(buf[(512-160)*2+3 + x*2]);
+    for (i = 0; i < w; i++) {
+      int i2 = v2ypos(buf[(512 - 160) * 2 + 2 + x * 2]);
+      int q2 = v2ypos(buf[(512 - 160) * 2 + 3 + x * 2]);
 
-        int imin = i1;
-        int qmin = q1;
-        int imax = i1;
-        int qmax = q1;
-        if (imin > (i0+i1)/2) imin = (i0+i1)/2;
-        if (imax < (i0+i1)/2) imax = (i0+i1)/2;
-        if (imin > (i1+i2)/2) imin = (i1+i2)/2;
-        if (imax < (i1+i2)/2) imax = (i1+i2)/2;
-        if (qmin > (q0+q1)/2) qmin = (q0+q1)/2;
-        if (qmax < (q0+q1)/2) qmax = (q0+q1)/2;
-        if (qmin > (q1+q2)/2) qmin = (q1+q2)/2;
-        if (qmax < (q1+q2)/2) qmax = (q1+q2)/2;
+      int imin = i1;
+      int qmin = q1;
+      int imax = i1;
+      int qmax = q1;
+      if (imin > (i0 + i1) / 2)
+        imin = (i0 + i1) / 2;
+      if (imax < (i0 + i1) / 2)
+        imax = (i0 + i1) / 2;
+      if (imin > (i1 + i2) / 2)
+        imin = (i1 + i2) / 2;
+      if (imax < (i1 + i2) / 2)
+        imax = (i1 + i2) / 2;
+      if (qmin > (q0 + q1) / 2)
+        qmin = (q0 + q1) / 2;
+      if (qmax < (q0 + q1) / 2)
+        qmax = (q0 + q1) / 2;
+      if (qmin > (q1 + q2) / 2)
+        qmin = (q1 + q2) / 2;
+      if (qmax < (q1 + q2) / 2)
+        qmax = (q1 + q2) / 2;
 
-        for (y = 0; y < HEIGHT; y++) {
-          c = bg;
-          // draw origin line
-          if (y == HEIGHT/2)
-            c = fg;
-          // draw 1ms tick
-          if (x % 48 == 0)
-            c = fg;
+      for (y = 0; y < HEIGHT; y++) {
+        c = bg;
+        // draw origin line
+        if (y == HEIGHT / 2)
+          c = fg;
+        // draw 1ms tick
+        if (x % 48 == 0)
+          c = fg;
 
-          if (y == i1 || (imin < y && y <= imax))
-            c |= RGB565(255, 255, 0);
-          if (y == q1 || (qmin < y && y <= qmax))
-            c |= RGB565(255, 0, 255);
+        if (y == i1 || (imin < y && y <= imax))
+          c |= RGB565(255, 255, 0);
+        if (y == q1 || (qmin < y && y <= qmax))
+          c |= RGB565(255, 0, 255);
 
-          spi_buffer[y * w + i] = c;
-        }
-        i0 = i1;
-        q0 = q1;
-        i1 = i2;
-        q1 = q2;
-        x++;
+        spi_buffer[y * w + i] = c;
       }
+      i0 = i1;
+      q0 = q1;
+      i1 = i2;
+      q1 = q2;
+      x++;
+    }
 
-      ili9341_draw_bitmap(xx, 152, w, HEIGHT, spi_buffer);
-      xx += i;
-	}
+    ili9341_draw_bitmap(xx, 152, w, HEIGHT, spi_buffer);
+    xx += i;
+  }
 }
 
 static int16_t vsa = 152;
@@ -978,52 +985,54 @@ static int16_t vsa = 152;
 void
 draw_waterfall(void)
 {
-	int x;
-	q31_t *buf = spdispinfo.buffer;
-	uint16_t mode = uistat.spdispmode;
-    const spectrumdisplay_param_t *param = GET_SPDISP_PARAM(mode);
-    if (uistat.fs == 192)
-      param = &spdispparam_tbl_192khz[mode];
-	uint16_t *block = spi_buffer;
-	int i = param->offset;
-	int stride = param->stride;
-	uint16_t bg = uistat.mode == WFDISP ? BG_ACTIVE : BG_NORMAL;
-    uint16_t c;
+  int x;
+  q31_t* buf = spdispinfo.buffer;
+  uint16_t mode = uistat.spdispmode;
+  const spectrumdisplay_param_t* param = GET_SPDISP_PARAM(mode);
+  if (uistat.fs == 192)
+    param = &spdispparam_tbl_192khz[mode];
+  uint16_t* block = spi_buffer;
+  int i = param->offset;
+  int stride = param->stride;
+  uint16_t bg = uistat.mode == WFDISP ? BG_ACTIVE : BG_NORMAL;
+  uint16_t c;
 
-    if (uistat.wfdispmode != WATERFALL)
-      return;
+  if (uistat.wfdispmode != WATERFALL)
+    return;
 
-	for (x = 0; x < 320; x++) {
-        int64_t acc = 0;
-        int i0 = i;
-        for (; i < i0 + stride; i++) {
-          q31_t ii = buf[(i&1023)*2];
-          q31_t qq = buf[(i&1023)*2+1];
-          acc += (int64_t)ii*ii + (int64_t)qq*qq;
-        }
-		//q31_t ii = buf[(i&1023)*2];
-		//q31_t qq = buf[(i&1023)*2+1];
-		//q31_t mag = ((int64_t)ii*ii + (int64_t)qq*qq)>>(33-gainshift);
-		//int v = log2_q31(mag) >> 6;
-        int v = (log2_i64(acc) - (34<<8)) >> 6;
-		if (v < 0) v = 0;
-		if (v > 63) v = 63;
-        c = pick_color(v);
-        if (c == 0)
-          c = bg;
-		*block++ = c;
-		//i += stride;
-	}
+  for (x = 0; x < 320; x++) {
+    int64_t acc = 0;
+    int i0 = i;
+    for (; i < i0 + stride; i++) {
+      q31_t ii = buf[(i & 1023) * 2];
+      q31_t qq = buf[(i & 1023) * 2 + 1];
+      acc += (int64_t)ii * ii + (int64_t)qq * qq;
+    }
+    // q31_t ii = buf[(i&1023)*2];
+    // q31_t qq = buf[(i&1023)*2+1];
+    // q31_t mag = ((int64_t)ii*ii + (int64_t)qq*qq)>>(33-gainshift);
+    // int v = log2_q31(mag) >> 6;
+    int v = (log2_i64(acc) - (34 << 8)) >> 6;
+    if (v < 0)
+      v = 0;
+    if (v > 63)
+      v = 63;
+    c = pick_color(v);
+    if (c == 0)
+      c = bg;
+    *block++ = c;
+    // i += stride;
+  }
 
-	vsa++;
-	if (vsa >= 240)
-		vsa = 152;
+  vsa++;
+  if (vsa >= 240)
+    vsa = 152;
 #if 0
 	// Vertical Scroll Address
 	uint8_t vscrsadd[2] = { vsa>>8, vsa };
 	send_command(0x37, 2, vscrsadd);
 #endif
-	ili9341_draw_bitmap(0, vsa, 320, 1, spi_buffer);
+  ili9341_draw_bitmap(0, vsa, 320, 1, spi_buffer);
 }
 
 static void
@@ -1055,163 +1064,164 @@ itoap(int value, char *buf, int dig, int pad)
 void
 draw_tick_abs(void)
 {
-	char str[10];
-	uint16_t mode = uistat.spdispmode;
-    const spectrumdisplay_param_t *param = GET_SPDISP_PARAM(mode);
-	uint16_t bg = BG_NORMAL;
-	uint16_t fg = uistat.mode == SPDISP ? FG_ACTIVE : FG_NORMAL;
-	int offset = param->origin;
-	//int step = param->tickstep;
-	int unit = param->tickunit;
-    int fs = uistat.fs;
-    float step = unit * 1024.0 / (fs * param->stride);
-    float freq = center_frequency;
-    float x;
+  char str[10];
+  uint16_t mode = uistat.spdispmode;
+  const spectrumdisplay_param_t* param = GET_SPDISP_PARAM(mode);
+  uint16_t bg = BG_NORMAL;
+  uint16_t fg = uistat.mode == SPDISP ? FG_ACTIVE : FG_NORMAL;
+  int offset = param->origin;
+  // int step = param->tickstep;
+  int unit = param->tickunit;
+  int fs = uistat.fs;
+  float step = unit * 1024.0 / (fs * param->stride);
+  float freq = center_frequency;
+  float x;
 
-    ili9341_fill(0, 136, 320, 16, bg);
+  ili9341_fill(0, 136, 320, 16, bg);
 
-    freq -= unit * 1000 * offset / step;
-    freq /= 1000.0; // into kHz
-    float m = freq / unit;
-    m -= floor(m);
-    m *= unit;
-    freq -= m;
-    x = -m * step / unit;
-	while (x < 320) {
-      itoap((int)freq % 1000, str, 3, '0');
-      if (x >= 0)
-        ili9341_fill((int)x, 136, 2, 5, fg);
-      ili9341_drawstring_5x7(str, (int)x - 7, 142, fg, bg);
-      x += step;
-      freq += unit;
-	}
+  freq -= unit * 1000 * offset / step;
+  freq /= 1000.0; // into kHz
+  float m = freq / unit;
+  m -= floor(m);
+  m *= unit;
+  freq -= m;
+  x = -m * step / unit;
+  while (x < 320) {
+    itoap((int)freq % 1000, str, 3, '0');
+    if (x >= 0)
+      ili9341_fill((int)x, 136, 2, 5, fg);
+    ili9341_drawstring_5x7(str, (int)x - 7, 142, fg, bg);
+    x += step;
+    freq += unit;
+  }
 
-    //ili9341_fill(offset, 136, 2, 6, RGB565(128,255,128));
+  // ili9341_fill(offset, 136, 2, 6, RGB565(128,255,128));
 }
 
 void
 draw_tick(void)
 {
-	char str[10];
-	uint16_t mode = uistat.spdispmode;
-    if (mode == 0) {
-      draw_tick_abs();
-      return;
-    }
-    const spectrumdisplay_param_t *param = GET_SPDISP_PARAM(mode);
-	int x = param->origin;
-	int base = param->tickbase;
-	int xx;
-	uint16_t bg = BG_NORMAL;
-	uint16_t fg = uistat.mode == SPDISP ? FG_ACTIVE : FG_NORMAL;
+  char str[10];
+  uint16_t mode = uistat.spdispmode;
+  if (mode == 0) {
+    draw_tick_abs();
+    return;
+  }
+  const spectrumdisplay_param_t* param = GET_SPDISP_PARAM(mode);
+  int x = param->origin;
+  int base = param->tickbase;
+  int xx;
+  uint16_t bg = BG_NORMAL;
+  uint16_t fg = uistat.mode == SPDISP ? FG_ACTIVE : FG_NORMAL;
 
-	ili9341_fill(0, 136, 320, 16, bg);
+  ili9341_fill(0, 136, 320, 16, bg);
+  itoa(base, str, 10);
+  strcat(str, param->unitname);
+  xx = x - strlen(str) * 5 / 2;
+  if (xx < 0)
+    xx = 0;
+  ili9341_drawstring_5x7(str, xx, 142, fg, bg);
+  ili9341_fill(x, 136, 2, 5, fg);
+
+  base += param->tickunit;
+  x += param->tickstep;
+  while (x < 320) {
     itoa(base, str, 10);
-    strcat(str, param->unitname);
-	xx = x - strlen(str) * 5 / 2;
-	if (xx < 0) xx = 0;
-	ili9341_drawstring_5x7(str, xx, 142, fg, bg);
-	ili9341_fill(x, 136, 2, 5, fg);
-
-	base += param->tickunit;
-	x += param->tickstep;
-	while (x < 320) {
-      itoa(base, str, 10);
-		ili9341_fill(x, 136, 2, 5, 0xffff);
-        int xx = x - strlen(str) * 5 / 2;
-		ili9341_drawstring_5x7(str, xx, 142, fg, bg);
-		base += param->tickunit;
-		x += param->tickstep;
-	}
-	x = param->origin;
-	base = param->tickbase;
-	base -= param->tickunit;
-	x -= param->tickstep;
-	while (x >= 0) {
-      itoa(base, str, 10);
-		ili9341_fill(x, 136, 2, 5, 0xffff);
-        int xx = x - strlen(str) * 5 / 2;
-		ili9341_drawstring_5x7(str, xx, 142, fg, bg);
-		base -= param->tickunit;
-		x -= param->tickstep;
-	}
+    ili9341_fill(x, 136, 2, 5, 0xffff);
+    int xx = x - strlen(str) * 5 / 2;
+    ili9341_drawstring_5x7(str, xx, 142, fg, bg);
+    base += param->tickunit;
+    x += param->tickstep;
+  }
+  x = param->origin;
+  base = param->tickbase;
+  base -= param->tickunit;
+  x -= param->tickstep;
+  while (x >= 0) {
+    itoa(base, str, 10);
+    ili9341_fill(x, 136, 2, 5, 0xffff);
+    int xx = x - strlen(str) * 5 / 2;
+    ili9341_drawstring_5x7(str, xx, 142, fg, bg);
+    base -= param->tickunit;
+    x -= param->tickstep;
+  }
 }
 
 void
 draw_freq(void)
 {
-	char str[10];
-	uint16_t bg = BG_NORMAL;
-	int i;
-	const uint16_t xsim[] = { 0, 16, 0, 0, 16, 0, 0, 0 };
-	uint16_t x = 0;
-    itoap(uistat.freq, str, 8, ' ');
-	for (i = 0; i < 8; i++) {
-		int8_t c = str[i] - '0';
-		uint16_t fg = 0xffff;
-        int focused = FALSE;
-		if (uistat.mode == FREQ && uistat.digit == 7-i) {
-            fg = FG_ACTIVE;
-            focused = TRUE;
-        }
-		if (c >= 0 && c <= 9)
-			ili9341_drawfont(c, &NF32x48, x, 0, fg, bg);
-		else if (focused)
-            ili9341_drawfont(0, &NF32x48, x, 0, fg, bg);
-        else
-			ili9341_fill(x, 0, 32, 48, bg);
-		x += 32;
+  char str[10];
+  uint16_t bg = BG_NORMAL;
+  int i;
+  const uint16_t xsim[] = { 0, 16, 0, 0, 16, 0, 0, 0 };
+  uint16_t x = 0;
+  itoap(uistat.freq, str, 8, ' ');
+  for (i = 0; i < 8; i++) {
+    int8_t c = str[i] - '0';
+    uint16_t fg = 0xffff;
+    int focused = FALSE;
+    if (uistat.mode == FREQ && uistat.digit == 7 - i) {
+      fg = FG_ACTIVE;
+      focused = TRUE;
+    }
+    if (c >= 0 && c <= 9)
+      ili9341_drawfont(c, &NF32x48, x, 0, fg, bg);
+    else if (focused)
+      ili9341_drawfont(0, &NF32x48, x, 0, fg, bg);
+    else
+      ili9341_fill(x, 0, 32, 48, bg);
+    x += 32;
 
-		// fill gaps
-		if (xsim[i] > 0) {
-			ili9341_fill(x, 0, xsim[i], 48, bg);
-			x += xsim[i];
-		}
-	}
-	// draw Hz symbol
-	ili9341_drawfont(10, &NF32x48, x, 0, 0xffff, bg);
+    // fill gaps
+    if (xsim[i] > 0) {
+      ili9341_fill(x, 0, xsim[i], 48, bg);
+      x += xsim[i];
+    }
+  }
+  // draw Hz symbol
+  ili9341_drawfont(10, &NF32x48, x, 0, 0xffff, bg);
 }
 
 void
 draw_channel_freq(void)
 {
-	char str[10];
-	uint16_t bg = BG_NORMAL;
-	uint16_t fg = uistat.mode == CHANNEL ? FG_ACTIVE : FG_NORMAL;
-	int i;
-	const uint16_t xsim[] = { 0, 16, 0, 0, 0 };
-	uint16_t x = 0;
+  char str[10];
+  uint16_t bg = BG_NORMAL;
+  uint16_t fg = uistat.mode == CHANNEL ? FG_ACTIVE : FG_NORMAL;
+  int i;
+  const uint16_t xsim[] = { 0, 16, 0, 0, 0 };
+  uint16_t x = 0;
 
-    ili9341_fill(x, 0, 20*2, 24, bg);
-    itoap(uistat.channel, str, 2, ' ');
-	ili9341_drawfont(uistat.channel / 10, &NF20x24, x, 24, fg, bg);
-    x += 20;
-	ili9341_drawfont(uistat.channel % 10, &NF20x24, x, 24, fg, bg);
-    x += 20;
+  ili9341_fill(x, 0, 20 * 2, 24, bg);
+  itoap(uistat.channel, str, 2, ' ');
+  ili9341_drawfont(uistat.channel / 10, &NF20x24, x, 24, fg, bg);
+  x += 20;
+  ili9341_drawfont(uistat.channel % 10, &NF20x24, x, 24, fg, bg);
+  x += 20;
 
-    bg = BG_NORMAL;
-    ili9341_fill(x, 0, 52, 48, bg);
-    x += 24+12+16;
+  bg = BG_NORMAL;
+  ili9341_fill(x, 0, 52, 48, bg);
+  x += 24 + 12 + 16;
 
-    itoap(uistat.freq / 1000, str, 5, ' ');
-	for (i = 0; i < 5; i++) {
-		int8_t c = str[i] - '0';
-		if (c >= 0 && c <= 9)
-			ili9341_drawfont(c, &NF32x48, x, 0, FG_NORMAL, bg);
-        else
-			ili9341_fill(x, 0, 32, 48, bg);
-		x += 32;
+  itoap(uistat.freq / 1000, str, 5, ' ');
+  for (i = 0; i < 5; i++) {
+    int8_t c = str[i] - '0';
+    if (c >= 0 && c <= 9)
+      ili9341_drawfont(c, &NF32x48, x, 0, FG_NORMAL, bg);
+    else
+      ili9341_fill(x, 0, 32, 48, bg);
+    x += 32;
 
-		// fill gaps
-		if (xsim[i] > 0) {
-			ili9341_fill(x, 0, xsim[i], 48, bg);
-			x += xsim[i];
-		}
-	}
-	// draw kHz symbol
-	ili9341_drawfont(11, &NF32x48, x, 0, FG_NORMAL, bg);
-    x += 20;
-	ili9341_drawfont(10, &NF32x48, x, 0, FG_NORMAL, bg);
+    // fill gaps
+    if (xsim[i] > 0) {
+      ili9341_fill(x, 0, xsim[i], 48, bg);
+      x += xsim[i];
+    }
+  }
+  // draw kHz symbol
+  ili9341_drawfont(11, &NF32x48, x, 0, FG_NORMAL, bg);
+  x += 20;
+  ili9341_drawfont(10, &NF32x48, x, 0, FG_NORMAL, bg);
 }
 
 #define FG_VOLUME 0xfffe
@@ -1258,129 +1268,137 @@ draw_dbm(int db, int x, int y, int16_t fg, int16_t bg)
 void
 draw_info(void)
 {
-	char str[10];
-	int x = 0;
-	int y = 48;
-	uint16_t bg = BG_NORMAL;
-    uint16_t fg = uistat.mode == VOLUME ? FG_ACTIVE : FG_VOLUME;
-	ili9341_drawfont(14, &NF20x24, x, y, fg, bg);
-	x += 20;
-	if (uistat.volume != -7)
-      itoap(uistat.volume, str, 2, ' ');
-	else
-		// -infinity
-		strcpy(str, "-\003");
-	ili9341_drawfont_string(str, &NF20x24, x, y, fg, bg);
-	x += 40;
-	ili9341_drawfont(13, &NF20x24, x, y, fg, bg); // dB
-	x += 20;
+  char str[10];
+  int x = 0;
+  int y = 48;
+  uint16_t bg = BG_NORMAL;
+  uint16_t fg = uistat.mode == VOLUME ? FG_ACTIVE : FG_VOLUME;
+  ili9341_drawfont(14, &NF20x24, x, y, fg, bg);
+  x += 20;
+  if (uistat.volume != -7)
+    itoap(uistat.volume, str, 2, ' ');
+  else
+    // -infinity
+    strcpy(str, "-\003");
+  ili9341_drawfont_string(str, &NF20x24, x, y, fg, bg);
+  x += 40;
+  ili9341_drawfont(13, &NF20x24, x, y, fg, bg); // dB
+  x += 20;
 
-	fg = uistat.mode == MOD ? FG_ACTIVE : FG_MOD;
-	ili9341_drawfont(uistat.modulation, &ICON48x20, x+2, y+2, fg, bg);
-	x += 48+4;
+  fg = uistat.mode == MOD ? FG_ACTIVE : FG_MOD;
+  ili9341_drawfont(uistat.modulation, &ICON48x20, x + 2, y + 2, fg, bg);
+  x += 48 + 4;
 
-	fg = uistat.mode == AGC ? FG_ACTIVE : FG_AGC;
-	ili9341_drawfont(uistat.agcmode + ICON_AGC_OFF, &ICON48x20, x+2, y+2, fg, bg);
-	x += 48+4;
+  fg = uistat.mode == AGC ? FG_ACTIVE : FG_AGC;
+  ili9341_drawfont(
+    uistat.agcmode + ICON_AGC_OFF, &ICON48x20, x + 2, y + 2, fg, bg);
+  x += 48 + 4;
 
-	fg = uistat.mode == AGC ? FG_ACTIVE : FG_NORMAL;
-    if (uistat.mode == RFGAIN) {
-      fg = FG_ACTIVE;
-      draw_db(uistat.rfgain << 7, x, y, fg, bg);
+  fg = uistat.mode == AGC ? FG_ACTIVE : FG_NORMAL;
+  if (uistat.mode == RFGAIN) {
+    fg = FG_ACTIVE;
+    draw_db(uistat.rfgain << 7, x, y, fg, bg);
 
-      // draw antenna icon by mode color of analog/digital
-      fg = 0x07ff;
-      if (uistat.rfgain < 0 || uistat.rfgain >= 96)
-        fg = 0x070f;
-      ili9341_drawfont(15, &NF20x24, x, y, fg, bg);
-    }
+    // draw antenna icon by mode color of analog/digital
+    fg = 0x07ff;
+    if (uistat.rfgain < 0 || uistat.rfgain >= 96)
+      fg = 0x070f;
+    ili9341_drawfont(15, &NF20x24, x, y, fg, bg);
+  }
 }
 
 void
 draw_aux_info(void)
 {
-	char str[10];
-	int x = 0;
-	int y = 48;
-	uint16_t bg = BG_NORMAL;
-    uint16_t fg = FG_NORMAL;
+  char str[10];
+  int x = 0;
+  int y = 48;
+  uint16_t bg = BG_NORMAL;
+  uint16_t fg = FG_NORMAL;
 
-    if (uistat.mode == AGC_MAXGAIN) {
-      fg = BG_NORMAL; bg = FG_NORMAL;
-    }
+  if (uistat.mode == AGC_MAXGAIN) {
+    fg = BG_NORMAL;
+    bg = FG_NORMAL;
+  }
 
-    ili9341_drawstring_5x7("AGCMAX", x, y, fg, bg);
-    x += 30;
-    itoap(config.agc.maximum_gain, str, 6, ' ');
-    ili9341_drawstring_5x7(str, x, y, fg, bg);
+  ili9341_drawstring_5x7("AGCMAX", x, y, fg, bg);
+  x += 30;
+  itoap(config.agc.maximum_gain, str, 6, ' ');
+  ili9341_drawstring_5x7(str, x, y, fg, bg);
 
-    y += 8;
-    x = 0;
-    fg = FG_NORMAL; bg = BG_NORMAL;
-    if (uistat.mode == CWTONE) {
-      fg = BG_NORMAL; bg = FG_NORMAL;
-    }
+  y += 8;
+  x = 0;
+  fg = FG_NORMAL;
+  bg = BG_NORMAL;
+  if (uistat.mode == CWTONE) {
+    fg = BG_NORMAL;
+    bg = FG_NORMAL;
+  }
 
-    ili9341_drawstring_5x7("CWTONE", x, y, fg, bg);
-    x += 30;
-    itoap(uistat.cw_tone_freq, str, 4, ' ');
-    ili9341_drawstring_5x7(str, x, y, fg, bg);
-    x += 20;
-    ili9341_drawstring_5x7("Hz", x, y, fg, bg);
+  ili9341_drawstring_5x7("CWTONE", x, y, fg, bg);
+  x += 30;
+  itoap(uistat.cw_tone_freq, str, 4, ' ');
+  ili9341_drawstring_5x7(str, x, y, fg, bg);
+  x += 20;
+  ili9341_drawstring_5x7("Hz", x, y, fg, bg);
 
-    y += 8;
-    x = 0;
-    fg = FG_NORMAL; bg = BG_NORMAL;
-    if (uistat.mode == IQBAL) {
-      fg = BG_NORMAL; bg = FG_NORMAL;
-    }
+  y += 8;
+  x = 0;
+  fg = FG_NORMAL;
+  bg = BG_NORMAL;
+  if (uistat.mode == IQBAL) {
+    fg = BG_NORMAL;
+    bg = FG_NORMAL;
+  }
 
-    ili9341_drawstring_5x7("IQBAL ", x, y, fg, bg);
-    x += 30;
-    itoap(uistat.iqbal, str, 6, ' ');
-    ili9341_drawstring_5x7(str, x, y, fg, bg);
-    x += 20;
+  ili9341_drawstring_5x7("IQBAL ", x, y, fg, bg);
+  x += 30;
+  itoap(uistat.iqbal, str, 6, ' ');
+  ili9341_drawstring_5x7(str, x, y, fg, bg);
+  x += 20;
 
-    // show statistics
-    fg = FG_NORMAL; bg = BG_NORMAL;
-	y = 48;
-	x = 65;
-    ili9341_drawstring_5x7("BATT", x, y, fg, bg);
-    x += 20;
-    itoap(stat.battery, str, 5, ' ');
-    ili9341_drawstring_5x7(str, x, y, fg, bg);
-    y += 8;
-	x = 65;
-    ili9341_drawstring_5x7("TEMP", x, y, fg, bg);
-    x += 20;
-    itoap(stat.temperature, str, 5, ' ');
-    ili9341_drawstring_5x7(str, x, y, fg, bg);
-    y += 8;
-	x = 65;
-    ili9341_drawstring_5x7("VREF", x, y, fg, bg);
-    x += 20;
-    itoap(stat.vref, str, 5, ' ');
-    ili9341_drawstring_5x7(str, x, y, fg, bg);
+  // show statistics
+  fg = FG_NORMAL;
+  bg = BG_NORMAL;
+  y = 48;
+  x = 65;
+  ili9341_drawstring_5x7("BATT", x, y, fg, bg);
+  x += 20;
+  itoap(stat.battery, str, 5, ' ');
+  ili9341_drawstring_5x7(str, x, y, fg, bg);
+  y += 8;
+  x = 65;
+  ili9341_drawstring_5x7("TEMP", x, y, fg, bg);
+  x += 20;
+  itoap(stat.temperature, str, 5, ' ');
+  ili9341_drawstring_5x7(str, x, y, fg, bg);
+  y += 8;
+  x = 65;
+  ili9341_drawstring_5x7("VREF", x, y, fg, bg);
+  x += 20;
+  itoap(stat.vref, str, 5, ' ');
+  ili9341_drawstring_5x7(str, x, y, fg, bg);
 
-    fg = FG_NORMAL; bg = BG_NORMAL;
-	y = 48;
-	x = 115;
-    ili9341_drawstring_5x7("RMS", x, y, fg, bg);
-    x += 15;
-    itoap(stat.rms[0], str, 5, ' ');
-    ili9341_drawstring_5x7(str, x, y, fg, bg);
-    y += 8;
-	x = 115;
-    ili9341_drawstring_5x7("FPS", x, y, fg, bg);
-    x += 15;
-    itoap(stat.fps, str, 5, ' ');
-    ili9341_drawstring_5x7(str, x, y, fg, bg);
-    y += 8;
-	x = 115;
-    ili9341_drawstring_5x7("OVF", x, y, fg, bg);
-    x += 15;
-    itoap(stat.overflow, str, 5, ' ');
-    ili9341_drawstring_5x7(str, x, y, fg, bg);
+  fg = FG_NORMAL;
+  bg = BG_NORMAL;
+  y = 48;
+  x = 115;
+  ili9341_drawstring_5x7("RMS", x, y, fg, bg);
+  x += 15;
+  itoap(stat.rms[0], str, 5, ' ');
+  ili9341_drawstring_5x7(str, x, y, fg, bg);
+  y += 8;
+  x = 115;
+  ili9341_drawstring_5x7("FPS", x, y, fg, bg);
+  x += 15;
+  itoap(stat.fps, str, 5, ' ');
+  ili9341_drawstring_5x7(str, x, y, fg, bg);
+  y += 8;
+  x = 115;
+  ili9341_drawstring_5x7("OVF", x, y, fg, bg);
+  x += 15;
+  itoap(stat.overflow, str, 5, ' ');
+  ili9341_drawstring_5x7(str, x, y, fg, bg);
 }
 
 void clear_aux_info(void)
@@ -1402,10 +1420,10 @@ draw_power(void)
 void
 clear_background(void)
 {
-	int i = 0;
-	for (i = 0; i < 24; i++) {
-		ili9341_fill(0, i*10, 320, 10, 0x0000);
-	}
+  int i = 0;
+  for (i = 0; i < 24; i++) {
+    ili9341_fill(0, i * 10, 320, 10, 0x0000);
+  }
 }
 
 // called periodically
@@ -1440,8 +1458,8 @@ disp_process(void)
   if (spdispinfo.update_flag & FLAG_POWER) {
     draw_power();
 
-    //if (uistat.mode == AGC_MAXGAIN || uistat.mode == CWTONE || uistat.mode == IQBAL)
-    //draw_aux_info();
+    // if (uistat.mode == AGC_MAXGAIN || uistat.mode == CWTONE || uistat.mode == IQBAL)
+    // draw_aux_info();
 
     spdispinfo.update_flag &= ~FLAG_POWER;
   }
